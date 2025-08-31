@@ -104,6 +104,81 @@
             justify-content: center;
             font-size: 12px;
         }
+        
+        /* COMPREHENSIVE RESPONSIVE DESIGN */
+        /* Mobile First Approach */
+        @media (max-width: 575.98px) {
+            body {
+                padding-top: 70px;
+                font-size: 14px;
+            }
+            
+            .container {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+            
+            .navbar-brand {
+                font-size: 1.1rem;
+            }
+            
+            .btn {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.8rem;
+            }
+            
+            h1, .h1 {
+                font-size: 1.5rem;
+            }
+            
+            h2, .h2 {
+                font-size: 1.25rem;
+            }
+            
+            h3, .h3 {
+                font-size: 1.1rem;
+            }
+            
+            .card {
+                margin-bottom: 1rem;
+            }
+            
+            .alert {
+                font-size: 0.85rem;
+            }
+        }
+        
+        @media (min-width: 576px) and (max-width: 767.98px) {
+            body {
+                padding-top: 72px;
+                font-size: 15px;
+            }
+            
+            .container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+        }
+        
+        @media (min-width: 768px) and (max-width: 991.98px) {
+            body {
+                padding-top: 74px;
+            }
+        }
+        
+        /* Ensure images are responsive */
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        /* Admin dashboard specific responsive fixes */
+        @media (max-width: 767.98px) {
+            .container-fluid {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+        }
     </style>
     
     @stack('styles')

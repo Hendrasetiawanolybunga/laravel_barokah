@@ -75,8 +75,6 @@
                                                         <div class="col-md-2 text-end">
                                                             @if($order->status === 'shipped' && !$item->ulasan)
                                                                 <button type="button" class="btn btn-sm btn-outline-success review-btn" 
-                                                                        data-bs-toggle="modal" 
-                                                                        data-bs-target="#reviewModal{{ $item->id }}"
                                                                         data-item-id="{{ $item->id }}"
                                                                         data-product-name="{{ $item->product->nama }}"
                                                                         data-product-qty="{{ $item->jumlah_item }}"
@@ -91,71 +89,6 @@
                                                         </div>
                                                     </div>
                                                 </div>
-
-                                                <!-- Review Modal -->
-                                                @if($order->status === 'shipped' && !$item->ulasan)
-                                                <div class="modal fade" id="reviewModal{{ $item->id }}" tabindex="-1" 
-                                                     data-bs-backdrop="static" data-bs-keyboard="false" 
-                                                     aria-labelledby="reviewModalLabel{{ $item->id }}" aria-hidden="true">
-                                                    <div class="modal-dialog">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title" id="reviewModalLabel{{ $item->id }}">
-                                                                    <i class="fas fa-comment text-primary me-2"></i>
-                                                                    Tulis Ulasan Produk
-                                                                </h5>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                            </div>
-                                                            <form action="{{ route('customer.orders.review', $item->id) }}" method="POST">
-                                                                @csrf
-                                                                <div class="modal-body">
-                                                                    <!-- Product Information -->
-                                                                    <div class="alert alert-light border mb-3">
-                                                                        <div class="row align-items-center">
-                                                                            <div class="col-auto">
-                                                                                @if($item->product->foto)
-                                                                                    <img src="{{ Storage::url($item->product->foto) }}" 
-                                                                                         alt="{{ $item->product->nama }}" 
-                                                                                         class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
-                                                                                @else
-                                                                                    <div class="bg-secondary rounded d-flex align-items-center justify-content-center" 
-                                                                                         style="width: 60px; height: 60px;">
-                                                                                        <i class="fas fa-image text-white"></i>
-                                                                                    </div>
-                                                                                @endif
-                                                                            </div>
-                                                                            <div class="col">
-                                                                                <h6 class="mb-1 text-dark">{{ $item->product->nama }}</h6>
-                                                                                <small class="text-muted">Jumlah: {{ $item->jumlah_item }}x | Harga: Rp {{ number_format($item->sub_total / $item->jumlah_item, 0, ',', '.') }}</small>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                    
-                                                                    <!-- Review Form -->
-                                                                    <div class="mb-3">
-                                                                        <label for="ulasan{{ $item->id }}" class="form-label">
-                                                                            <i class="fas fa-edit me-1"></i>Bagikan pengalaman Anda dengan produk ini
-                                                                        </label>
-                                                                        <textarea class="form-control" id="ulasan{{ $item->id }}" name="ulasan" 
-                                                                                  rows="4" 
-                                                                                  placeholder="Ceritakan pengalaman Anda menggunakan {{ $item->product->nama }}. Apakah produk sesuai ekspektasi? Bagaimana kualitasnya?" 
-                                                                                  required></textarea>
-                                                                        <div class="form-text">
-                                                                            <i class="fas fa-info-circle me-1"></i>Ulasan Anda akan membantu pembeli lain untuk membuat keputusan yang tepat.
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="modal-footer">
-                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                                    <button type="submit" class="btn btn-success">
-                                                                        <i class="fas fa-paper-plane me-2"></i>Kirim Review
-                                                                    </button>
-                                                                </div>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                @endif
                                             @endforeach
                                         </div>
                                         
@@ -212,6 +145,78 @@
     </div>
 </div>
 
+<!-- TOP-LEVEL MODALS FOR PROPER Z-INDEX POSITIONING -->
+@if($orders->count() > 0)
+    @foreach($orders as $order)
+        @foreach($order->orderItems as $item)
+            @if($order->status === 'shipped' && !$item->ulasan)
+            <!-- Review Modal - Positioned at top level -->
+            <div class="modal fade top-level-modal" id="reviewModal{{ $item->id }}" tabindex="-1" 
+                 data-bs-backdrop="static" data-bs-keyboard="false" 
+                 aria-labelledby="reviewModalLabel{{ $item->id }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="reviewModalLabel{{ $item->id }}">
+                                <i class="fas fa-comment text-primary me-2"></i>
+                                Tulis Ulasan Produk
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form action="{{ route('customer.orders.review', $item->id) }}" method="POST">
+                            @csrf
+                            <div class="modal-body">
+                                <!-- Product Information -->
+                                <div class="alert alert-light border mb-3">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                            @if($item->product->foto)
+                                                <img src="{{ Storage::url($item->product->foto) }}" 
+                                                     alt="{{ $item->product->nama }}" 
+                                                     class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                                            @else
+                                                <div class="bg-secondary rounded d-flex align-items-center justify-content-center" 
+                                                     style="width: 60px; height: 60px;">
+                                                    <i class="fas fa-image text-white"></i>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div class="col">
+                                            <h6 class="mb-1 text-dark">{{ $item->product->nama }}</h6>
+                                            <small class="text-muted">Jumlah: {{ $item->jumlah_item }}x | Harga: Rp {{ number_format($item->sub_total / $item->jumlah_item, 0, ',', '.') }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Review Form -->
+                                <div class="mb-3">
+                                    <label for="ulasan{{ $item->id }}" class="form-label">
+                                        <i class="fas fa-edit me-1"></i>Bagikan pengalaman Anda dengan produk ini
+                                    </label>
+                                    <textarea class="form-control" id="ulasan{{ $item->id }}" name="ulasan" 
+                                              rows="4" 
+                                              placeholder="Ceritakan pengalaman Anda menggunakan {{ $item->product->nama }}. Apakah produk sesuai ekspektasi? Bagaimana kualitasnya?" 
+                                              required></textarea>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>Ulasan Anda akan membantu pembeli lain untuk membuat keputusan yang tepat.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-paper-plane me-2"></i>Kirim Review
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            @endif
+        @endforeach
+    @endforeach
+@endif
+
 @push('styles')
 <style>
 .card {
@@ -231,27 +236,93 @@
     background-color: rgba(76, 175, 80, 0.05) !important;
 }
 
-/* Enhanced modal stability styles */
+/* COMPLETE MODAL POSITIONING AND Z-INDEX FIX */
+/* Ensure modals are always on top level with maximum z-index */
 .modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 10000 !important;
+    display: none !important;
     pointer-events: auto !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.modal.show {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.top-level-modal {
+    position: fixed !important;
+    z-index: 10001 !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
 }
 
 .modal-dialog {
+    position: relative !important;
+    z-index: 10002 !important;
     pointer-events: auto !important;
+    margin: auto !important;
+    max-width: 500px !important;
+    width: 90% !important;
 }
 
 .modal-content {
+    position: relative !important;
+    z-index: 10003 !important;
+    pointer-events: auto !important;
+    background: white !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+}
+
+.modal-backdrop {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 9999 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background-color: rgba(0, 0, 0, 0.5) !important;
     pointer-events: auto !important;
 }
 
-/* Prevent any hover effects on modal elements that could cause flickering */
-.modal .btn:hover,
-.modal .btn:focus,
-.modal .btn:active {
+/* CRITICAL: Prevent parent containers from affecting modal positioning */
+.container,
+.container-fluid,
+.row,
+.col-12,
+.card {
+    overflow: visible !important;
+    position: static !important;
+}
+
+/* Ensure modal appears above all content regardless of container nesting */
+body.modal-open {
+    overflow: hidden !important;
     pointer-events: auto !important;
 }
 
-/* Ensure review button is stable */
+body.modal-open .modal {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
+
+/* Remove transforms that could interfere with positioning */
+.modal * {
+    transform: none !important;
+}
+
+/* Stable review button */
 .review-btn {
     transition: all 0.2s ease;
     pointer-events: auto !important;
@@ -265,6 +336,269 @@
 .modal .alert {
     background-color: rgba(76, 175, 80, 0.1) !important;
     border-color: rgba(76, 175, 80, 0.2) !important;
+}
+
+/* CRITICAL: Prevent body events from interfering with modals */
+body.modal-open {
+    pointer-events: auto !important;
+    overflow: hidden !important;
+}
+
+body.modal-open * {
+    pointer-events: auto !important;
+}
+
+/* Disable mouse events that could trigger modal conflicts */
+body:hover,
+body:focus,
+.container:hover,
+.row:hover,
+.col-12:hover {
+    pointer-events: auto !important;
+}
+
+/* COMPREHENSIVE RESPONSIVE DESIGN */
+/* Mobile First Approach - Extra Small devices (portrait phones, less than 576px) */
+@media (max-width: 575.98px) {
+    .container {
+        padding: 0.5rem;
+    }
+    
+    h1, .h1 {
+        font-size: 1.25rem;
+    }
+    
+    h2, .h2 {
+        font-size: 1.15rem;
+    }
+    
+    h3, .h3, h4, .h4, h5, .h5, h6, .h6 {
+        font-size: 1rem;
+    }
+    
+    .btn {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8rem;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .card {
+        margin-bottom: 0.75rem;
+        border-radius: 0.5rem;
+    }
+    
+    .card-body {
+        padding: 0.75rem;
+    }
+    
+    .card-header {
+        padding: 0.75rem;
+    }
+    
+    .badge {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .alert {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    .modal-dialog {
+        margin: 0.25rem;
+        max-width: calc(100% - 0.5rem);
+    }
+    
+    .modal-content {
+        border-radius: 0.5rem;
+    }
+    
+    .modal-header {
+        padding: 0.75rem;
+    }
+    
+    .modal-header h5 {
+        font-size: 0.95rem;
+    }
+    
+    .modal-body {
+        padding: 0.75rem;
+        font-size: 0.85rem;
+    }
+    
+    .modal-footer {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .table {
+        font-size: 0.75rem;
+    }
+    
+    .display-1 {
+        font-size: 3rem;
+    }
+    
+    .border {
+        padding: 0.5rem !important;
+    }
+    
+    .row .col-md-2,
+    .row .col-md-4,
+    .row .col-md-6,
+    .row .col-md-8 {
+        margin-bottom: 0.5rem;
+    }
+    
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    .text-md-end {
+        text-align: left !important;
+    }
+}
+
+/* Small devices (landscape phones, 576px and up) */
+@media (min-width: 576px) and (max-width: 767.98px) {
+    .container {
+        padding: 0.75rem;
+    }
+    
+    h1, .h1 {
+        font-size: 1.4rem;
+    }
+    
+    h2, .h2 {
+        font-size: 1.25rem;
+    }
+    
+    .btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.85rem;
+    }
+    
+    .modal-dialog {
+        margin: 0.5rem;
+        max-width: calc(100% - 1rem);
+    }
+    
+    .modal-body {
+        padding: 0.875rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    .modal-dialog {
+        margin: 1rem;
+    }
+}
+
+/* Large devices (desktops, 992px and up) - default styles */
+@media (min-width: 992px) {
+    .card {
+        transition: all 0.3s ease;
+    }
+}
+
+/* Ensure images are responsive across all screen sizes */
+.img-fluid {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Responsive text alignment */
+@media (max-width: 767.98px) {
+    .text-md-end {
+        text-align: center !important;
+        margin-top: 0.5rem;
+    }
+    
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    .d-flex.justify-content-between .btn {
+        margin-top: 0.5rem;
+        width: 100%;
+    }
+}
+
+/* Enhanced responsive grid */
+@media (max-width: 767.98px) {
+    .row.align-items-center > .col-md-2,
+    .row.align-items-center > .col-md-4,
+    .row.align-items-center > .col-md-6,
+    .row.align-items-center > .col-md-8 {
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .row.align-items-center > .col-md-2:last-child {
+        margin-bottom: 0;
+    }
+}
+
+/* Responsive product image sizing */
+@media (max-width: 575.98px) {
+    .col-md-2 img,
+    .col-auto img {
+        width: 40px !important;
+        height: 40px !important;
+        max-height: 40px !important;
+    }
+    
+    .bg-secondary.rounded {
+        width: 40px !important;
+        height: 40px !important;
+    }
+}
+
+@media (min-width: 576px) and (max-width: 767.98px) {
+    .col-md-2 img,
+    .col-auto img {
+        width: 50px !important;
+        height: 50px !important;
+        max-height: 50px !important;
+    }
+    
+    .bg-secondary.rounded {
+        width: 50px !important;
+        height: 50px !important;
+    }
+}
+
+/* Responsive spacing */
+@media (max-width: 767.98px) {
+    .py-4 {
+        padding-top: 1.5rem !important;
+        padding-bottom: 1.5rem !important;
+    }
+    
+    .py-5 {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+    }
+    
+    .mb-4 {
+        margin-bottom: 1rem !important;
+    }
+    
+    .mb-3 {
+        margin-bottom: 0.75rem !important;
+    }
 }
 </style>
 @endpush
@@ -283,83 +617,204 @@ $(document).ready(function() {
         });
     @endif
     
-    // Enhanced modal control to prevent flickering completely
+    // COMPREHENSIVE MODAL POSITIONING SYSTEM
     let modalProcessing = false;
+    let currentModal = null;
+    let bodyEventsDisabled = false;
     
-    // Remove default Bootstrap modal triggers to prevent conflicts
-    $('.review-btn').removeAttr('data-bs-toggle').removeAttr('data-bs-target');
+    // CRITICAL: Force all containers to allow modal overflow
+    function ensureModalOverflow() {
+        // Prevent any parent containers from clipping modals
+        $('.container, .container-fluid, .row, .col-12, .card, .card-body').css({
+            'overflow': 'visible !important',
+            'position': 'static !important'
+        });
+        
+        // Ensure body allows modal positioning
+        $('body').css({
+            'position': 'relative',
+            'z-index': 'auto'
+        });
+    }
     
-    // Custom modal handling with enhanced stability
+    // CRITICAL: Completely disable all body events that could interfere with modals
+    function disableAllBodyEvents() {
+        if (bodyEventsDisabled) return;
+        
+        // Remove all existing event handlers that could cause conflicts
+        $('body, html, document, window').off('mousemove.modalFlicker mouseenter.modalFlicker mouseleave.modalFlicker mouseover.modalFlicker mouseout.modalFlicker hover.modalFlicker');
+        $(document).off('mousemove.modalFlicker mouseenter.modalFlicker mouseleave.modalFlicker');
+        $('body').off('mousemove mouseenter mouseleave mouseover mouseout hover');
+        
+        // Prevent any new hover or mouse events
+        $('body').css('pointer-events', 'auto');
+        bodyEventsDisabled = true;
+    }
+    
+    // Initialize complete body event protection immediately
+    disableAllBodyEvents();
+    
+    // Initialize container overflow prevention
+    ensureModalOverflow();
+    
+    // REMOVE ALL BOOTSTRAP DEFAULT MODAL TRIGGERS
+    $('.review-btn').each(function() {
+        $(this).removeAttr('data-bs-toggle');
+        $(this).removeAttr('data-bs-target');
+        $(this).removeData('bs-toggle');
+        $(this).removeData('bs-target');
+    });
+    
+    // COMPLETE CUSTOM MODAL CONTROL SYSTEM
     $('.review-btn').on('click', function(event) {
+        // Prevent any default behavior or propagation
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
         
-        // Prevent multiple clicks
-        if (modalProcessing) return false;
+        // Block multiple rapid clicks
+        if (modalProcessing) {
+            return false;
+        }
         modalProcessing = true;
         
         const button = $(this);
-        const modalId = '#reviewModal' + button.data('item-id');
+        const itemId = button.data('item-id');
+        const modalId = '#reviewModal' + itemId;
         const productName = button.data('product-name');
-        const productQty = button.data('product-qty');
-        const productPrice = button.data('product-price');
         
-        // Close any existing modals first
+        // Force close ANY existing modals immediately
         $('.modal').each(function() {
             const existingModal = bootstrap.Modal.getInstance(this);
             if (existingModal) {
-                existingModal.hide();
+                existingModal.dispose();
             }
+            $(this).removeClass('show').hide();
         });
         
-        // Wait for any existing modals to fully close
+        // Remove any existing backdrops
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        
+        // Ensure body events stay disabled
+        disableAllBodyEvents();
+        
+        // Ensure containers don't clip the modal
+        ensureModalOverflow();
+        
+        // Wait for complete cleanup before showing new modal
         setTimeout(function() {
             try {
                 const modalElement = document.querySelector(modalId);
-                if (modalElement) {
-                    // Update modal content dynamically
-                    const placeholder = modalElement.querySelector('textarea').getAttribute('placeholder');
-                    if (placeholder.includes('{{')) {
-                        modalElement.querySelector('textarea').setAttribute('placeholder', 
-                            `Ceritakan pengalaman Anda menggunakan ${productName}. Apakah produk sesuai ekspektasi? Bagaimana kualitasnya?`);
-                    }
+                if (!modalElement) {
+                    console.error('Modal element not found:', modalId);
+                    modalProcessing = false;
+                    return;
+                }
+                
+                // Update textarea placeholder with product info
+                const textarea = modalElement.querySelector('textarea');
+                if (textarea && productName) {
+                    textarea.setAttribute('placeholder', 
+                        `Ceritakan pengalaman Anda menggunakan ${productName}. Apakah produk sesuai ekspektasi? Bagaimana kualitasnya?`);
+                }
+                
+                // Create new modal instance with strict configuration
+                currentModal = new bootstrap.Modal(modalElement, {
+                    backdrop: 'static',
+                    keyboard: false,
+                    focus: true
+                });
+                
+                // Add comprehensive event handlers for this modal
+                modalElement.addEventListener('shown.bs.modal', function() {
+                    modalProcessing = false;
+                    disableAllBodyEvents();
                     
-                    const modal = new bootstrap.Modal(modalElement, {
-                        backdrop: 'static',
-                        keyboard: false,
-                        focus: true
+                    // CRITICAL: Ensure modal is positioned at top level with maximum z-index
+                    $(modalElement).css({
+                        'position': 'fixed',
+                        'top': '0',
+                        'left': '0',
+                        'width': '100vw',
+                        'height': '100vh',
+                        'z-index': '10000',
+                        'display': 'flex',
+                        'align-items': 'center',
+                        'justify-content': 'center',
+                        'pointer-events': 'auto',
+                        'background': 'rgba(0, 0, 0, 0.5)'
                     });
                     
-                    modal.show();
+                    // Ensure modal dialog is properly positioned
+                    $(modalElement).find('.modal-dialog').css({
+                        'position': 'relative',
+                        'z-index': '10002',
+                        'margin': 'auto',
+                        'max-width': '500px',
+                        'width': '90%'
+                    });
                     
-                    // Reset processing flag when modal is shown
-                    modalElement.addEventListener('shown.bs.modal', function() {
-                        modalProcessing = false;
-                    }, { once: true });
+                    // Ensure modal content has proper styling
+                    $(modalElement).find('.modal-content').css({
+                        'position': 'relative',
+                        'z-index': '10003',
+                        'background': 'white',
+                        'border-radius': '0.5rem',
+                        'box-shadow': '0 10px 25px rgba(0, 0, 0, 0.5)'
+                    });
+                }, { once: true });
+                
+                modalElement.addEventListener('hidden.bs.modal', function() {
+                    modalProcessing = false;
+                    currentModal = null;
+                    disableAllBodyEvents();
                     
-                    // Reset processing flag if modal fails to show
-                    setTimeout(function() {
+                    // Clean up any remaining modal artifacts
+                    $('.modal-backdrop').remove();
+                    $('body').removeClass('modal-open');
+                }, { once: true });
+                
+                modalElement.addEventListener('hide.bs.modal', function() {
+                    if (currentModal) {
+                        currentModal = null;
+                    }
+                });
+                
+                // Show the modal
+                currentModal.show();
+                
+                // Safety timeout to reset processing flag
+                setTimeout(function() {
+                    if (modalProcessing) {
                         modalProcessing = false;
-                    }, 1000);
-                }
+                    }
+                }, 2000);
+                
             } catch (error) {
                 console.error('Error showing modal:', error);
                 modalProcessing = false;
+                currentModal = null;
+                disableAllBodyEvents();
             }
-        }, 150);
+        }, 100);
         
         return false;
     });
     
-    // Prevent modal from closing on hover or mouse events
-    $('.modal').on('mouseenter mouseleave mouseover mouseout', function(event) {
-        event.stopPropagation();
+    // PREVENT ALL MOUSE EVENTS FROM AFFECTING MODALS
+    $(document).on('mousemove mouseenter mouseleave mouseover mouseout hover', function(event) {
+        if ($('.modal.show').length > 0 || currentModal) {
+            event.stopPropagation();
+            event.preventDefault();
+            return false;
+        }
     });
     
-    // Handle modal backdrop clicks properly
-    $('.modal').on('click', function(event) {
+    // SECURE MODAL CLOSING HANDLERS
+    $(document).on('click', '.modal', function(event) {
         if (event.target === this) {
+            event.stopPropagation();
             const modal = bootstrap.Modal.getInstance(this);
             if (modal) {
                 modal.hide();
@@ -367,26 +822,74 @@ $(document).ready(function() {
         }
     });
     
-    // Prevent modal from closing when clicking inside modal content
-    $('.modal-dialog').on('click', function(event) {
+    // Prevent closing when clicking inside modal content
+    $(document).on('click', '.modal-dialog', function(event) {
         event.stopPropagation();
     });
     
-    // Ensure modal closes properly with close button
-    $('.modal .btn-close, .modal [data-bs-dismiss="modal"]').on('click', function(event) {
+    // Secure close button handling
+    $(document).on('click', '.modal .btn-close, .modal [data-bs-dismiss="modal"]', function(event) {
         event.preventDefault();
         event.stopPropagation();
         
-        const modal = bootstrap.Modal.getInstance($(this).closest('.modal')[0]);
+        const modalEl = $(this).closest('.modal')[0];
+        const modal = bootstrap.Modal.getInstance(modalEl);
         if (modal) {
             modal.hide();
         }
     });
     
-    // Reset processing flag when any modal is hidden
-    $('.modal').on('hidden.bs.modal', function() {
-        modalProcessing = false;
+    // GLOBAL PROTECTION SYSTEM
+    // Disable any body events that could interfere with modals
+    $('body').on('mousemove mouseenter mouseleave mouseover mouseout hover', function(event) {
+        if ($('.modal.show').length > 0 || currentModal) {
+            event.stopPropagation();
+            event.preventDefault();
+            return false;
+        }
     });
+    
+    // Prevent any hover effects on containers when modal is open
+    $('.container, .row, .col-12, .card').on('mouseenter mouseleave mouseover mouseout hover', function(event) {
+        if ($('.modal.show').length > 0 || currentModal) {
+            event.stopPropagation();
+            event.preventDefault();
+            return false;
+        }
+    });
+    
+    // Monitor for unexpected modal state changes and positioning issues
+    setInterval(function() {
+        // If a modal is supposed to be open but isn't visible, prevent flickering
+        if (currentModal && $('.modal.show').length === 0) {
+            disableAllBodyEvents();
+        }
+        
+        // Clean up orphaned backdrops
+        if ($('.modal.show').length === 0 && $('.modal-backdrop').length > 0) {
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open');
+        }
+        
+        // Continuously ensure modal positioning for any open modals
+        $('.modal.show').each(function() {
+            $(this).css({
+                'position': 'fixed',
+                'top': '0',
+                'left': '0',
+                'width': '100vw',
+                'height': '100vh',
+                'z-index': '10000',
+                'display': 'flex'
+            });
+        });
+        
+        // Ensure containers don't interfere
+        ensureModalOverflow();
+    }, 100);
+    
+    // Final protection: Disable events immediately on page load
+    disableAllBodyEvents();
 });
 </script>
 @endpush

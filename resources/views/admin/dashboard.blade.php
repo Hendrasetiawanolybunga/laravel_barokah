@@ -3,7 +3,7 @@
 @section('title', 'Admin Dashboard - Laravel Barokah')
 
 @section('content')
-<div class="container-fluid py-4 px-4">
+<div class="container-fluid py-4 admin-dashboard-container">
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
@@ -261,6 +261,58 @@
     
     .stats-card {
         background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    }
+    
+    /* Admin dashboard container styling */
+    .admin-dashboard-container {
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+    
+    /* Responsive admin dashboard */
+    @media (max-width: 767.98px) {
+        .admin-dashboard-container {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+        
+        .d-flex.justify-content-between {
+            flex-direction: column;
+            align-items: flex-start !important;
+        }
+        
+        .text-end {
+            text-align: left !important;
+            margin-top: 0.5rem;
+        }
+        
+        h1.h3 {
+            font-size: 1.25rem;
+        }
+        
+        .btn {
+            font-size: 0.8rem;
+            padding: 0.375rem 0.75rem;
+        }
+        
+        .table {
+            font-size: 0.85rem;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+        
+        .row.g-4 {
+            gap: 1rem;
+        }
+    }
+    
+    @media (min-width: 768px) and (max-width: 991.98px) {
+        .admin-dashboard-container {
+            padding-left: 2rem;
+            padding-right: 2rem;
+        }
     }
 </style>
 @endpush
