@@ -1,6 +1,6 @@
 @if(Request::route()->getName() === 'landing')
 <!-- Landing Page Navbar -->
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
     <div class="container">
         <a class="navbar-brand text-primary" href="{{ route('landing') }}">
             <i class="fas fa-store"></i> Laravel Barokah
@@ -34,8 +34,8 @@
 
 @elseif(auth()->check() && auth()->user()->isAdmin())
 <!-- Admin Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container-fluid">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+    <div class="container">
         <a class="navbar-brand text-white" href="{{ route('admin.dashboard') }}">
             <i class="fas fa-shield-alt"></i> Admin Panel
         </a>
@@ -95,7 +95,7 @@
 
 @elseif(auth()->check() && auth()->user()->isCustomer())
 <!-- Customer Navbar -->
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
     <div class="container">
         <a class="navbar-brand text-primary" href="{{ route('customer.home') }}">
             <i class="fas fa-store"></i> Laravel Barokah
@@ -152,7 +152,7 @@
 
 @else
 <!-- Guest Navbar -->
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
     <div class="container">
         <a class="navbar-brand text-primary" href="{{ route('landing') }}">
             <i class="fas fa-store"></i> Laravel Barokah
