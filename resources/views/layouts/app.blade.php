@@ -28,6 +28,12 @@
             --light-green: #e8f5e8;
         }
         
+        /* Apply Poppins font to entire body */
+        body {
+            font-family: 'Poppins', sans-serif;
+            padding-top: 76px; /* Add padding to prevent content being hidden by fixed navbar */
+        }
+        
         .bg-primary {
             background-color: var(--primary-color) !important;
         }

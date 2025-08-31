@@ -15,9 +15,10 @@
 
 /* Global Styles */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Poppins', sans-serif;
     line-height: 1.6;
     color: var(--text-dark);
+    padding-top: 76px; /* Add padding to prevent content being hidden by fixed navbar */
 }
 
 /* Button Styles */
