@@ -153,13 +153,13 @@ function initializeSmoothAnimations() {
 
     cards.forEach(card => cardObserver.observe(card));
     
-    // Smooth scroll for anchor links
-    const anchorLinks = document.querySelectorAll('a[href^="#"]');
+    // Smooth scroll for anchor links (but not modal triggers)
+    const anchorLinks = document.querySelectorAll('a[href^="#"]:not([data-bs-toggle="modal"])');
     anchorLinks.forEach(function(link) {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
+            if (target && !target.classList.contains('modal')) {
                 target.scrollIntoView({
                     behavior: 'smooth',
                     block: 'start'

@@ -133,12 +133,12 @@
                                     <thead class="table-light">
                                         <tr>
                                             <th width="80">Foto</th>
-                                            <th>Produk</th>
+                                            <th width="150">Produk</th>
                                             <th width="100">Harga</th>
                                             <th width="80">Qty</th>
                                             <th width="120">Subtotal</th>
                                             @if($order->status === 'shipped' && $order->orderItems->where('ulasan', '!=', null)->count() > 0)
-                                                <th width="150">Ulasan</th>
+                                                <th>Ulasan</th>
                                             @endif
                                         </tr>
                                     </thead>
@@ -160,7 +160,7 @@
                                                 </td>
                                                 <td>
                                                     <h6 class="mb-1">{{ $item->product->nama }}</h6>
-                                                    <small class="text-muted">{{ Str::limit($item->product->deskripsi, 60) }}</small>
+                                                   
                                                 </td>
                                                 <td>
                                                     <span class="text-success">
@@ -178,15 +178,11 @@
                                                 @if($order->status === 'shipped' && $order->orderItems->where('ulasan', '!=', null)->count() > 0)
                                                     <td>
                                                         @if($item->ulasan)
-                                                            <span class="text-warning">
-                                                                <i class="fas fa-star"></i>
-                                                                <i class="fas fa-star"></i>
-                                                                <i class="fas fa-star"></i>
-                                                                <i class="fas fa-star"></i>
-                                                                <i class="fas fa-star"></i>
-                                                            </span>
-                                                            <br>
-                                                            <small class="text-muted">{{ Str::limit($item->ulasan, 50) }}</small>
+                                                            <div class="text-success mb-1">
+                                                                <i class="fas fa-comment-alt me-1"></i>
+                                                                <small class="fw-bold">Ada Ulasan</small>
+                                                            </div>
+                                                            <small class="text-muted">{{ Str::limit($item->ulasan, 200) }}</small>
                                                         @else
                                                             <small class="text-muted">Belum ada ulasan</small>
                                                         @endif

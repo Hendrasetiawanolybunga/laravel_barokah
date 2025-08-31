@@ -74,10 +74,14 @@
                                                         </div>
                                                         <div class="col-md-2 text-end">
                                                             @if($order->status === 'shipped' && !$item->ulasan)
-                                                                <button class="btn btn-sm btn-outline-success" 
+                                                                <button type="button" class="btn btn-sm btn-outline-success review-btn" 
                                                                         data-bs-toggle="modal" 
-                                                                        data-bs-target="#reviewModal{{ $item->id }}">
-                                                                    <i class="fas fa-star me-1"></i>Review
+                                                                        data-bs-target="#reviewModal{{ $item->id }}"
+                                                                        data-item-id="{{ $item->id }}"
+                                                                        data-product-name="{{ $item->product->nama }}"
+                                                                        data-product-qty="{{ $item->jumlah_item }}"
+                                                                        data-product-price="{{ number_format($item->sub_total / $item->jumlah_item, 0, ',', '.') }}">
+                                                                    <i class="fas fa-comment me-1"></i>Review
                                                                 </button>
                                                             @elseif($item->ulasan)
                                                                 <span class="text-success">
@@ -90,23 +94,55 @@
 
                                                 <!-- Review Modal -->
                                                 @if($order->status === 'shipped' && !$item->ulasan)
-                                                <div class="modal fade" id="reviewModal{{ $item->id }}" tabindex="-1">
+                                                <div class="modal fade" id="reviewModal{{ $item->id }}" tabindex="-1" 
+                                                     data-bs-backdrop="static" data-bs-keyboard="false" 
+                                                     aria-labelledby="reviewModalLabel{{ $item->id }}" aria-hidden="true">
                                                     <div class="modal-dialog">
                                                         <div class="modal-content">
                                                             <div class="modal-header">
-                                                                <h5 class="modal-title">
-                                                                    <i class="fas fa-star text-warning me-2"></i>
-                                                                    Review Produk: {{ $item->product->nama }}
+                                                                <h5 class="modal-title" id="reviewModalLabel{{ $item->id }}">
+                                                                    <i class="fas fa-comment text-primary me-2"></i>
+                                                                    Tulis Ulasan Produk
                                                                 </h5>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                             </div>
                                                             <form action="{{ route('customer.orders.review', $item->id) }}" method="POST">
                                                                 @csrf
                                                                 <div class="modal-body">
+                                                                    <!-- Product Information -->
+                                                                    <div class="alert alert-light border mb-3">
+                                                                        <div class="row align-items-center">
+                                                                            <div class="col-auto">
+                                                                                @if($item->product->foto)
+                                                                                    <img src="{{ Storage::url($item->product->foto) }}" 
+                                                                                         alt="{{ $item->product->nama }}" 
+                                                                                         class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                                                                                @else
+                                                                                    <div class="bg-secondary rounded d-flex align-items-center justify-content-center" 
+                                                                                         style="width: 60px; height: 60px;">
+                                                                                        <i class="fas fa-image text-white"></i>
+                                                                                    </div>
+                                                                                @endif
+                                                                            </div>
+                                                                            <div class="col">
+                                                                                <h6 class="mb-1 text-dark">{{ $item->product->nama }}</h6>
+                                                                                <small class="text-muted">Jumlah: {{ $item->jumlah_item }}x | Harga: Rp {{ number_format($item->sub_total / $item->jumlah_item, 0, ',', '.') }}</small>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    <!-- Review Form -->
                                                                     <div class="mb-3">
-                                                                        <label for="ulasan{{ $item->id }}" class="form-label">Ulasan Produk</label>
+                                                                        <label for="ulasan{{ $item->id }}" class="form-label">
+                                                                            <i class="fas fa-edit me-1"></i>Bagikan pengalaman Anda dengan produk ini
+                                                                        </label>
                                                                         <textarea class="form-control" id="ulasan{{ $item->id }}" name="ulasan" 
-                                                                                  rows="4" placeholder="Berikan ulasan Anda tentang produk ini..." required></textarea>
+                                                                                  rows="4" 
+                                                                                  placeholder="Ceritakan pengalaman Anda menggunakan {{ $item->product->nama }}. Apakah produk sesuai ekspektasi? Bagaimana kualitasnya?" 
+                                                                                  required></textarea>
+                                                                        <div class="form-text">
+                                                                            <i class="fas fa-info-circle me-1"></i>Ulasan Anda akan membantu pembeli lain untuk membuat keputusan yang tepat.
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                                 <div class="modal-footer">
@@ -194,6 +230,42 @@
 .bg-light {
     background-color: rgba(76, 175, 80, 0.05) !important;
 }
+
+/* Enhanced modal stability styles */
+.modal {
+    pointer-events: auto !important;
+}
+
+.modal-dialog {
+    pointer-events: auto !important;
+}
+
+.modal-content {
+    pointer-events: auto !important;
+}
+
+/* Prevent any hover effects on modal elements that could cause flickering */
+.modal .btn:hover,
+.modal .btn:focus,
+.modal .btn:active {
+    pointer-events: auto !important;
+}
+
+/* Ensure review button is stable */
+.review-btn {
+    transition: all 0.2s ease;
+    pointer-events: auto !important;
+}
+
+.review-btn:hover {
+    transform: none !important;
+}
+
+/* Product info in modal */
+.modal .alert {
+    background-color: rgba(76, 175, 80, 0.1) !important;
+    border-color: rgba(76, 175, 80, 0.2) !important;
+}
 </style>
 @endpush
 
@@ -210,6 +282,111 @@ $(document).ready(function() {
             showConfirmButton: false
         });
     @endif
+    
+    // Enhanced modal control to prevent flickering completely
+    let modalProcessing = false;
+    
+    // Remove default Bootstrap modal triggers to prevent conflicts
+    $('.review-btn').removeAttr('data-bs-toggle').removeAttr('data-bs-target');
+    
+    // Custom modal handling with enhanced stability
+    $('.review-btn').on('click', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        
+        // Prevent multiple clicks
+        if (modalProcessing) return false;
+        modalProcessing = true;
+        
+        const button = $(this);
+        const modalId = '#reviewModal' + button.data('item-id');
+        const productName = button.data('product-name');
+        const productQty = button.data('product-qty');
+        const productPrice = button.data('product-price');
+        
+        // Close any existing modals first
+        $('.modal').each(function() {
+            const existingModal = bootstrap.Modal.getInstance(this);
+            if (existingModal) {
+                existingModal.hide();
+            }
+        });
+        
+        // Wait for any existing modals to fully close
+        setTimeout(function() {
+            try {
+                const modalElement = document.querySelector(modalId);
+                if (modalElement) {
+                    // Update modal content dynamically
+                    const placeholder = modalElement.querySelector('textarea').getAttribute('placeholder');
+                    if (placeholder.includes('{{')) {
+                        modalElement.querySelector('textarea').setAttribute('placeholder', 
+                            `Ceritakan pengalaman Anda menggunakan ${productName}. Apakah produk sesuai ekspektasi? Bagaimana kualitasnya?`);
+                    }
+                    
+                    const modal = new bootstrap.Modal(modalElement, {
+                        backdrop: 'static',
+                        keyboard: false,
+                        focus: true
+                    });
+                    
+                    modal.show();
+                    
+                    // Reset processing flag when modal is shown
+                    modalElement.addEventListener('shown.bs.modal', function() {
+                        modalProcessing = false;
+                    }, { once: true });
+                    
+                    // Reset processing flag if modal fails to show
+                    setTimeout(function() {
+                        modalProcessing = false;
+                    }, 1000);
+                }
+            } catch (error) {
+                console.error('Error showing modal:', error);
+                modalProcessing = false;
+            }
+        }, 150);
+        
+        return false;
+    });
+    
+    // Prevent modal from closing on hover or mouse events
+    $('.modal').on('mouseenter mouseleave mouseover mouseout', function(event) {
+        event.stopPropagation();
+    });
+    
+    // Handle modal backdrop clicks properly
+    $('.modal').on('click', function(event) {
+        if (event.target === this) {
+            const modal = bootstrap.Modal.getInstance(this);
+            if (modal) {
+                modal.hide();
+            }
+        }
+    });
+    
+    // Prevent modal from closing when clicking inside modal content
+    $('.modal-dialog').on('click', function(event) {
+        event.stopPropagation();
+    });
+    
+    // Ensure modal closes properly with close button
+    $('.modal .btn-close, .modal [data-bs-dismiss="modal"]').on('click', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const modal = bootstrap.Modal.getInstance($(this).closest('.modal')[0]);
+        if (modal) {
+            modal.hide();
+        }
+    });
+    
+    // Reset processing flag when any modal is hidden
+    $('.modal').on('hidden.bs.modal', function() {
+        modalProcessing = false;
+    });
 });
 </script>
 @endpush
