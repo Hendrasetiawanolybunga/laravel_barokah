@@ -262,16 +262,20 @@
     
     function updateStatus(orderId, newStatus) {
         let confirmMessage = '';
+        let successMessage = '';
         
         switch(newStatus) {
             case 'paid':
                 confirmMessage = 'Konfirmasi pembayaran untuk pesanan ini?';
+                successMessage = 'Pembayaran berhasil dikonfirmasi!';
                 break;
             case 'shipped':
                 confirmMessage = 'Tandai pesanan ini sebagai sudah dikirim?';
+                successMessage = 'Pesanan berhasil ditandai sebagai dikirim!';
                 break;
             case 'canceled':
                 confirmMessage = 'Batalkan pesanan ini? Tindakan ini tidak dapat dibatalkan.';
+                successMessage = 'Pesanan berhasil dibatalkan!';
                 break;
         }
         
@@ -290,11 +294,45 @@
             },
             success: function(response) {
                 hideLoading();
-                location.reload();
+                if (response.success) {
+                    // Show success message with SweetAlert2 if available, otherwise use alert
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Berhasil!',
+                            text: successMessage,
+                            icon: 'success',
+                            confirmButtonColor: '#4CAF50'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        alert(successMessage);
+                        location.reload();
+                    }
+                } else {
+                    alert(response.message || 'Terjadi kesalahan saat memperbarui status pesanan.');
+                }
             },
             error: function(xhr, status, error) {
                 hideLoading();
-                alert('Terjadi kesalahan saat memperbarui status pesanan.');
+                let errorMessage = 'Terjadi kesalahan saat memperbarui status pesanan.';
+                
+                // Try to parse JSON error response
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                
+                // Show error message with SweetAlert2 if available, otherwise use alert
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: errorMessage,
+                        icon: 'error',
+                        confirmButtonColor: '#d33'
+                    });
+                } else {
+                    alert(errorMessage);
+                }
             }
         });
     }

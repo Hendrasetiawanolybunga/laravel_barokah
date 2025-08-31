@@ -27,28 +27,27 @@
                                     <div class="cart-item border-bottom p-3" data-product-id="{{ $productId }}">
                                         <div class="row align-items-center">
                                             <div class="col-md-2">
-                                                @if($item['foto'])
+                                                @if(isset($item['foto']) && $item['foto'])
                                                     <img src="{{ Storage::url($item['foto']) }}" 
-                                                         alt="{{ $item['nama'] }}" 
+                                                         alt="{{ $item['nama'] ?? 'Produk' }}" 
                                                          class="img-fluid rounded">
                                                 @else
-                                                    <div class="bg-secondary rounded d-flex align-items-center justify-content-center" 
-                                                         style="height: 80px;">
-                                                        <i class="fas fa-image text-white"></i>
-                                                    </div>
+                                                    <img src="{{ asset('storage/placeholder-product.svg') }}" 
+                                                         alt="{{ $item['nama'] ?? 'Produk' }}" 
+                                                         class="img-fluid rounded">
                                                 @endif
                                             </div>
                                             
                                             <div class="col-md-4">
-                                                <h6 class="mb-1">{{ $item['nama'] }}</h6>
+                                                <h6 class="mb-1">{{ $item['nama'] ?? 'Nama Produk Tidak Tersedia' }}</h6>
                                                 <p class="text-muted mb-0 small">
-                                                    {{ Str::limit($item['deskripsi'], 60) }}
+                                                    {{ isset($item['deskripsi']) ? Str::limit($item['deskripsi'], 60) : 'Deskripsi tidak tersedia' }}
                                                 </p>
                                             </div>
                                             
                                             <div class="col-md-2 text-center">
                                                 <strong class="text-success">
-                                                    Rp {{ number_format($item['price'], 0, ',', '.') }}
+                                                    Rp {{ number_format($item['price'] ?? 0, 0, ',', '.') }}
                                                 </strong>
                                             </div>
                                             
@@ -62,9 +61,9 @@
                                                     </button>
                                                     <input type="number" 
                                                            class="form-control text-center quantity-input" 
-                                                           value="{{ $item['quantity'] }}" 
+                                                           value="{{ $item['quantity'] ?? 1 }}" 
                                                            min="1" 
-                                                           max="{{ $item['stok'] }}"
+                                                           max="{{ $item['stok'] ?? 999 }}"
                                                            data-product-id="{{ $productId }}">
                                                     <button class="btn btn-outline-secondary quantity-btn" 
                                                             type="button" 
@@ -73,7 +72,7 @@
                                                         <i class="fas fa-plus"></i>
                                                     </button>
                                                 </div>
-                                                <small class="text-muted">Stok: {{ $item['stok'] }}</small>
+                                                <small class="text-muted">Stok: {{ $item['stok'] ?? 'N/A' }}</small>
                                             </div>
                                             
                                             <div class="col-md-1 text-end">
@@ -90,7 +89,7 @@
                                                 <strong>
                                                     Subtotal: 
                                                     <span class="text-success item-subtotal">
-                                                        Rp {{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}
+                                                        Rp {{ number_format(($item['price'] ?? 0) * ($item['quantity'] ?? 1), 0, ',', '.') }}
                                                     </span>
                                                 </strong>
                                             </div>
@@ -111,7 +110,7 @@
                             <div class="card-body">
                                 <div class="d-flex justify-content-between mb-3">
                                     <span>Jumlah Item:</span>
-                                    <strong class="total-items">{{ array_sum(array_column($cart, 'quantity')) }}</strong>
+                                    <strong class="total-items">{{ array_sum(array_map(function($item) { return $item['quantity'] ?? 0; }, $cart)) }}</strong>
                                 </div>
                                 <div class="d-flex justify-content-between mb-3">
                                     <span>Total Belanja:</span>

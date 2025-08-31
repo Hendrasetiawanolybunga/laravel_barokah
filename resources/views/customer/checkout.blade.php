@@ -80,30 +80,30 @@
                     @foreach($cart as $productId => $item)
                         <div class="row align-items-center py-2 {{ !$loop->last ? 'border-bottom' : '' }}">
                             <div class="col-md-2">
-                                @if($item['photo'])
-                                    <img src="{{ asset('storage/' . $item['photo']) }}" 
-                                         alt="{{ $item['name'] }}" 
+                                @if(isset($item['foto']) && $item['foto'])
+                                    <img src="{{ Storage::url($item['foto']) }}" 
+                                         alt="{{ $item['nama'] ?? 'Produk' }}" 
                                          class="img-thumbnail"
                                          style="width: 60px; height: 60px; object-fit: cover;">
                                 @else
-                                    <div class="bg-light border d-flex align-items-center justify-content-center" 
-                                         style="width: 60px; height: 60px;">
-                                        <i class="fas fa-image text-muted"></i>
-                                    </div>
+                                    <img src="{{ asset('storage/placeholder-product.svg') }}" 
+                                         alt="{{ $item['nama'] ?? 'Produk' }}" 
+                                         class="img-thumbnail"
+                                         style="width: 60px; height: 60px; object-fit: cover;">
                                 @endif
                             </div>
                             <div class="col-md-6">
-                                <h6 class="fw-bold mb-1">{{ $item['name'] }}</h6>
+                                <h6 class="fw-bold mb-1">{{ $item['nama'] ?? 'Nama Produk Tidak Tersedia' }}</h6>
                                 <small class="text-muted">
-                                    Rp {{ number_format($item['price'], 0, ',', '.') }} x {{ $item['quantity'] }}
+                                    Rp {{ number_format($item['price'] ?? 0, 0, ',', '.') }} x {{ $item['quantity'] ?? 1 }}
                                 </small>
                             </div>
                             <div class="col-md-2">
-                                <span class="badge bg-secondary">{{ $item['quantity'] }} pcs</span>
+                                <span class="badge bg-secondary">{{ $item['quantity'] ?? 1 }} pcs</span>
                             </div>
                             <div class="col-md-2 text-end">
                                 <span class="fw-bold text-success">
-                                    Rp {{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}
+                                    Rp {{ number_format(($item['price'] ?? 0) * ($item['quantity'] ?? 1), 0, ',', '.') }}
                                 </span>
                             </div>
                         </div>

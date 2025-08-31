@@ -3,7 +3,7 @@
 @section('title', 'Admin Dashboard - Laravel Barokah')
 
 @section('content')
-<div class="container-fluid py-4">
+<div class="container-fluid py-4 px-4">
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">

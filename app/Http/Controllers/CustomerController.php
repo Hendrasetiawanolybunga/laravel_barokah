@@ -61,10 +61,7 @@ class CustomerController extends Controller
             $cart[$productId]['quantity'] = $newQuantity;
         } else {
             $cart[$productId] = [
-                'name' => $product->nama,
-                'price' => $product->harga,
                 'quantity' => $request->quantity,
-                'photo' => $product->foto,
             ];
         }
 
@@ -137,11 +134,47 @@ class CustomerController extends Controller
      */
     public function showCart()
     {
-        $cart = session()->get('cart', []);
+        $cartSession = session()->get('cart', []);
+        
+        if (empty($cartSession)) {
+            return view('customer.cart', ['cart' => [], 'total' => 0]);
+        }
+        
+        // Get product IDs from cart
+        $productIds = array_keys($cartSession);
+        
+        // Fetch complete product data from database
+        $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+        
+        $cart = [];
         $total = 0;
-
-        foreach ($cart as $item) {
-            $total += $item['price'] * $item['quantity'];
+        
+        foreach ($cartSession as $productId => $sessionItem) {
+            $product = $products->get($productId);
+            
+            if ($product) {
+                $cart[$productId] = [
+                    'nama' => $product->nama,
+                    'deskripsi' => $product->deskripsi,
+                    'foto' => $product->foto,
+                    'price' => $product->harga,
+                    'quantity' => $sessionItem['quantity'],
+                    'stok' => $product->stok,
+                ];
+                
+                $total += $product->harga * $sessionItem['quantity'];
+            }
+        }
+        
+        // Clean up cart session if any products no longer exist
+        if (count($cart) !== count($cartSession)) {
+            $cleanCart = [];
+            foreach ($cart as $productId => $item) {
+                $cleanCart[$productId] = [
+                    'quantity' => $item['quantity']
+                ];
+            }
+            session()->put('cart', $cleanCart);
         }
 
         return view('customer.cart', compact('cart', 'total'));
@@ -154,15 +187,36 @@ class CustomerController extends Controller
      */
     public function checkout()
     {
-        $cart = session()->get('cart', []);
+        $cartSession = session()->get('cart', []);
         
-        if (empty($cart)) {
+        if (empty($cartSession)) {
             return redirect()->route('customer.home')->with('error', 'Keranjang belanja kosong.');
         }
 
+        // Get product IDs from cart
+        $productIds = array_keys($cartSession);
+        
+        // Fetch complete product data from database
+        $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+        
+        $cart = [];
         $total = 0;
-        foreach ($cart as $item) {
-            $total += $item['price'] * $item['quantity'];
+        
+        foreach ($cartSession as $productId => $sessionItem) {
+            $product = $products->get($productId);
+            
+            if ($product) {
+                $cart[$productId] = [
+                    'nama' => $product->nama,
+                    'deskripsi' => $product->deskripsi,
+                    'foto' => $product->foto,
+                    'price' => $product->harga,
+                    'quantity' => $sessionItem['quantity'],
+                    'stok' => $product->stok,
+                ];
+                
+                $total += $product->harga * $sessionItem['quantity'];
+            }
         }
 
         return view('customer.checkout', compact('cart', 'total'));
@@ -184,17 +238,26 @@ class CustomerController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
-        $cart = session()->get('cart', []);
+        $cartSession = session()->get('cart', []);
         
-        if (empty($cart)) {
+        if (empty($cartSession)) {
             return redirect()->route('customer.home')->with('error', 'Keranjang belanja kosong.');
         }
 
+        // Get product IDs from cart
+        $productIds = array_keys($cartSession);
+        
+        // Fetch complete product data from database
+        $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+        
         try {
             // Calculate total
             $total = 0;
-            foreach ($cart as $item) {
-                $total += $item['price'] * $item['quantity'];
+            foreach ($cartSession as $productId => $sessionItem) {
+                $product = $products->get($productId);
+                if ($product) {
+                    $total += $product->harga * $sessionItem['quantity'];
+                }
             }
 
             // Upload payment proof
@@ -210,17 +273,19 @@ class CustomerController extends Controller
             ]);
 
             // Create order items
-            foreach ($cart as $productId => $item) {
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $productId,
-                    'jumlah_item' => $item['quantity'],
-                    'sub_total' => $item['price'] * $item['quantity'],
-                ]);
+            foreach ($cartSession as $productId => $sessionItem) {
+                $product = $products->get($productId);
+                if ($product) {
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_id' => $productId,
+                        'jumlah_item' => $sessionItem['quantity'],
+                        'sub_total' => $product->harga * $sessionItem['quantity'],
+                    ]);
 
-                // Update product stock
-                $product = Product::find($productId);
-                $product->decrement('stok', $item['quantity']);
+                    // Update product stock
+                    $product->decrement('stok', $sessionItem['quantity']);
+                }
             }
 
             // Clear cart

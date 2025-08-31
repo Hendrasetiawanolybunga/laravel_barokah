@@ -261,6 +261,14 @@ class AdminController extends Controller
         ]);
 
         if ($validator->fails()) {
+            // Handle AJAX requests
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data tidak valid.',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
             return back()->withErrors($validator);
         }
 
@@ -269,8 +277,24 @@ class AdminController extends Controller
                 'status' => $request->status
             ]);
 
+            // Handle AJAX requests
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Status pesanan berhasil diperbarui.',
+                    'order' => $order->fresh()
+                ]);
+            }
+
             return back()->with('success', 'Status pesanan berhasil diperbarui.');
         } catch (\Exception $e) {
+            // Handle AJAX requests
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat memperbarui status pesanan.'
+                ], 500);
+            }
             return back()->withErrors(['error' => 'Terjadi kesalahan saat memperbarui status pesanan.']);
         }
     }

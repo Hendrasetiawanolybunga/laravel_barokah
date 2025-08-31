@@ -130,9 +130,9 @@
             }
         });
         
-        // Auto hide alerts after 5 seconds
+        // Auto hide dismissible alerts after 5 seconds (not payment instructions)
         setTimeout(function() {
-            $('.alert').fadeOut('slow');
+            $('.alert-dismissible').fadeOut('slow');
         }, 5000);
     </script>
     

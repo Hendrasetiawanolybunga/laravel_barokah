@@ -36,7 +36,7 @@
 <!-- Admin Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
-        <a class="navbar-brand " href="{{ route('admin.dashboard') }}">
+        <a class="navbar-brand text-white" href="{{ route('admin.dashboard') }}">
             <i class="fas fa-shield-alt"></i> Admin Panel
         </a>
         
