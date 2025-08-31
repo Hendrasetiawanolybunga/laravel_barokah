@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Beranda - Laravel Barokah')
+@section('title', 'Beranda - UD. Barokah Jaya Beton')
 
 @section('content')
 <div class="container py-4">
@@ -15,7 +15,7 @@
                                 <i class="fas fa-home"></i> Selamat Datang, {{ $user->name }}!
                             </h4>
                             <p class="mb-0 opacity-75">
-                                Selamat berbelanja di Laravel Barokah, tempat Anda menemukan produk berkualitas
+                                Selamat berbelanja di UD. Barokah Jaya Beton, tempat Anda menemukan produk berkualitas
                             </p>
                         </div>
                         <div class="text-end">

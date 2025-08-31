@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Checkout - Laravel Barokah')
+@section('title', 'Checkout - UD. Barokah Jaya Beton')
 
 @section('content')
 <div class="container py-4">
@@ -112,28 +112,32 @@
             </div>
 
             <!-- Payment Instructions -->
-            <div class="card mb-4">
-                <div class="card-header">
+            <div class="card mb-4 payment-instructions-card">
+                <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
                         <i class="fas fa-university"></i> Instruksi Pembayaran
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-info">
-                        <h6 class="alert-heading">
+                    <div class="alert alert-info border-0" style="background: rgba(13, 202, 240, 0.1);">
+                        <h6 class="alert-heading text-info">
                             <i class="fas fa-info-circle"></i> Transfer Bank Manual
                         </h6>
                         <p class="mb-2">Silakan transfer ke rekening berikut:</p>
                         <div class="row">
                             <div class="col-md-6">
-                                <strong>Bank BCA</strong><br>
-                                <code>1234567890</code><br>
-                                <small>a.n. Laravel Barokah</small>
+                                <div class="bg-white p-3 rounded border">
+                                    <strong class="text-primary">Bank BCA</strong><br>
+                                    <code class="bg-light p-1 rounded">1234567890</code><br>
+                                    <small class="text-muted">a.n. UD. Barokah Jaya Beton</small>
+                                </div>
                             </div>
                             <div class="col-md-6">
-                                <strong>Bank Mandiri</strong><br>
-                                <code>0987654321</code><br>
-                                <small>a.n. Laravel Barokah</small>
+                                <div class="bg-white p-3 rounded border">
+                                    <strong class="text-primary">Bank Mandiri</strong><br>
+                                    <code class="bg-light p-1 rounded">0987654321</code><br>
+                                    <small class="text-muted">a.n. UD. Barokah Jaya Beton</small>
+                                </div>
                             </div>
                         </div>
                         <hr>
@@ -142,8 +146,8 @@
                         </small>
                     </div>
                     
-                    <div class="alert alert-warning">
-                        <h6 class="alert-heading">
+                    <div class="alert alert-warning border-0" style="background: rgba(255, 193, 7, 0.1);">
+                        <h6 class="alert-heading text-warning">
                             <i class="fas fa-exclamation-triangle"></i> Penting!
                         </h6>
                         <ul class="mb-0 small">
@@ -268,7 +272,7 @@
                     <small class="text-muted">
                         Hubungi customer service kami:<br>
                         <i class="fas fa-phone"></i> +62 812-3456-7890<br>
-                        <i class="fas fa-envelope"></i> support@laravelbarokah.com
+                        <i class="fas fa-envelope"></i> support@barokahjayabeton.com
                     </small>
                 </div>
             </div>
@@ -276,6 +280,231 @@
     </div>
 </div>
 @endsection
+
+@push('styles')
+<style>
+/* PAYMENT INSTRUCTIONS PROTECTION */
+.payment-instructions-card {
+    position: relative !important;
+    z-index: 1 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.payment-instructions-card .card-body {
+    position: static !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.payment-instructions-card .alert {
+    position: static !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* Prevent any JavaScript or CSS from hiding payment instructions */
+.payment-instructions-card,
+.payment-instructions-card * {
+    animation: none !important;
+    transition: none !important;
+}
+
+/* Enhanced card design */
+.card {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+    border-bottom: none;
+    padding: 1.25rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Bank account styling */
+.bg-white.p-3.rounded.border {
+    transition: all 0.3s ease;
+}
+
+.bg-white.p-3.rounded.border:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* Button improvements */
+.btn {
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
+/* Checkout steps enhancement */
+.card-body .row.text-center .col-md-4 {
+    padding: 1rem;
+}
+
+.text-success i,
+.text-primary i,
+.text-muted i {
+    transition: transform 0.3s ease;
+}
+
+.text-success:hover i,
+.text-primary:hover i {
+    transform: scale(1.1);
+}
+
+/* Responsive design for checkout */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .d-flex.align-items-center .btn {
+        margin-bottom: 1rem;
+    }
+    
+    .row.align-items-center {
+        text-align: center;
+    }
+    
+    .col-md-2,
+    .col-md-6 {
+        margin-bottom: 1rem;
+    }
+    
+    .text-end {
+        text-align: center !important;
+    }
+    
+    h1.h3 {
+        font-size: 1.5rem;
+    }
+    
+    .card-header h5 {
+        font-size: 1.1rem;
+    }
+    
+    /* Payment form on mobile */
+    .col-lg-4 {
+        margin-top: 2rem;
+    }
+    
+    /* Bank account cards responsive */
+    .row .col-md-6 {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .container {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    
+    .card {
+        border-radius: 10px;
+    }
+    
+    .btn {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+    }
+    
+    .display-6 {
+        font-size: 1.25rem;
+    }
+    
+    /* Stack checkout steps vertically on very small screens */
+    .row.text-center .col-md-4 {
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 1rem;
+    }
+    
+    .row.text-center .col-md-4:last-child {
+        border-bottom: none;
+    }
+}
+
+/* Additional protection against element disappearing */
+.alert-info,
+.alert-warning {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+}
+
+/* Ensure payment instructions stay visible */
+.payment-instructions-card .alert-info,
+.payment-instructions-card .alert-warning {
+    margin-bottom: 1rem !important;
+}
+
+/* Form enhancements */
+.form-control {
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+}
+
+/* File input styling */
+.form-control[type="file"] {
+    padding: 0.75rem;
+}
+
+/* Preview image enhancement */
+#payment-preview {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#preview-payment {
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+}
+
+#preview-payment:hover {
+    transform: scale(1.02);
+}
+</style>
+@endpush
 
 @push('scripts')
 <script>
@@ -291,5 +520,71 @@
             reader.readAsDataURL(input.files[0]);
         }
     }
+    
+    // CRITICAL: Ensure payment instructions never disappear
+    document.addEventListener('DOMContentLoaded', function() {
+        // Protect payment instructions from being hidden
+        const paymentCard = document.querySelector('.payment-instructions-card');
+        if (paymentCard) {
+            // Remove any potential hiding classes or styles
+            paymentCard.style.display = 'block';
+            paymentCard.style.visibility = 'visible';
+            paymentCard.style.opacity = '1';
+            
+            // Prevent any scripts from hiding the payment instructions
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && 
+                        (mutation.attributeName === 'style' || mutation.attributeName === 'class')) {
+                        const target = mutation.target;
+                        if (target.classList.contains('payment-instructions-card') ||
+                            target.closest('.payment-instructions-card')) {
+                            // Ensure it remains visible
+                            target.style.display = 'block';
+                            target.style.visibility = 'visible';
+                            target.style.opacity = '1';
+                        }
+                    }
+                });
+            });
+            
+            observer.observe(paymentCard, {
+                attributes: true,
+                childList: true,
+                subtree: true,
+                attributeFilter: ['style', 'class']
+            });
+        }
+        
+        // Enhanced form validation
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const fileInput = document.getElementById('bukti_bayar');
+                const termsCheckbox = document.getElementById('terms');
+                
+                if (!fileInput.files.length) {
+                    e.preventDefault();
+                    alert('Silakan upload bukti pembayaran terlebih dahulu.');
+                    fileInput.focus();
+                    return false;
+                }
+                
+                if (!termsCheckbox.checked) {
+                    e.preventDefault();
+                    alert('Silakan centang persetujuan syarat dan ketentuan.');
+                    termsCheckbox.focus();
+                    return false;
+                }
+                
+                // Show loading state
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+                    submitBtn.disabled = true;
+                }
+            });
+        }
+    });
 </script>
 @endpush

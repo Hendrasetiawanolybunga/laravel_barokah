@@ -3,7 +3,7 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
     <div class="container">
         <a class="navbar-brand text-primary" href="{{ route('landing') }}">
-            <i class="fas fa-store"></i> Laravel Barokah
+            <i class="fas fa-store"></i> UD. Barokah Jaya Beton
         </a>
         
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -37,7 +37,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
     <div class="container">
         <a class="navbar-brand" href="{{ route('admin.dashboard') }}" style="color: #ffffff !important; font-weight: bold;">
-            <i class="fas fa-shield-alt"></i> Admin Panel
+            <i class="fas fa-shield-alt"></i> UD. BJB Admin
         </a>
         
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNav">
@@ -98,7 +98,7 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
     <div class="container">
         <a class="navbar-brand text-primary" href="{{ route('customer.home') }}">
-            <i class="fas fa-store"></i> Laravel Barokah
+            <i class="fas fa-store"></i> UD. Barokah Jaya Beton
         </a>
         
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#customerNav">
@@ -155,7 +155,7 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
     <div class="container">
         <a class="navbar-brand text-primary" href="{{ route('landing') }}">
-            <i class="fas fa-store"></i> Laravel Barokah
+            <i class="fas fa-store"></i> UD. Barokah Jaya Beton
         </a>
         
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#guestNav">
