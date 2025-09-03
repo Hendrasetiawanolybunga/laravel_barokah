@@ -44,15 +44,7 @@ class AdminController extends Controller
     }
 
     /**
-     * Show create product form
-     */
-    public function createProduct()
-    {
-        return view('admin.products.create');
-    }
-
-    /**
-     * Store new product
+     * Store new product (AJAX)
      */
     public function storeProduct(Request $request)
     {
@@ -74,6 +66,12 @@ class AdminController extends Controller
         ]);
 
         if ($validator->fails()) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ]);
+            }
             return back()->withErrors($validator)->withInput();
         }
 
@@ -89,22 +87,26 @@ class AdminController extends Controller
                 'stok' => $request->stok,
             ]);
 
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Produk berhasil ditambahkan.'
+                ]);
+            }
             return redirect()->route('admin.products')->with('success', 'Produk berhasil ditambahkan.');
         } catch (\Exception $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat menyimpan produk.'
+                ]);
+            }
             return back()->withErrors(['error' => 'Terjadi kesalahan saat menyimpan produk.'])->withInput();
         }
     }
 
     /**
-     * Show edit product form
-     */
-    public function editProduct(Product $product)
-    {
-        return view('admin.products.edit', compact('product'));
-    }
-
-    /**
-     * Update product
+     * Update product (AJAX)
      */
     public function updateProduct(Request $request, Product $product)
     {
@@ -117,6 +119,12 @@ class AdminController extends Controller
         ]);
 
         if ($validator->fails()) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ]);
+            }
             return back()->withErrors($validator)->withInput();
         }
 
@@ -139,8 +147,20 @@ class AdminController extends Controller
 
             $product->update($data);
 
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Produk berhasil diperbarui.'
+                ]);
+            }
             return redirect()->route('admin.products')->with('success', 'Produk berhasil diperbarui.');
         } catch (\Exception $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat memperbarui produk.'
+                ]);
+            }
             return back()->withErrors(['error' => 'Terjadi kesalahan saat memperbarui produk.'])->withInput();
         }
     }
@@ -161,6 +181,31 @@ class AdminController extends Controller
             return redirect()->route('admin.products')->with('success', 'Produk berhasil dihapus.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Terjadi kesalahan saat menghapus produk.']);
+        }
+    }
+
+    /**
+     * Get product data for AJAX requests
+     */
+    public function getProduct(Product $product)
+    {
+        try {
+            return response()->json([
+                'success' => true,
+                'product' => [
+                    'id' => $product->id,
+                    'nama' => $product->nama,
+                    'harga' => $product->harga,
+                    'stok' => $product->stok,
+                    'deskripsi' => $product->deskripsi,
+                    'foto' => $product->foto
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Produk tidak ditemukan.'
+            ], 404);
         }
     }
 
@@ -228,7 +273,267 @@ class AdminController extends Controller
         }
     }
 
+    /**
+     * Store new customer
+     */
+    public function storeCustomer(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+            'alamat' => 'required|string|max:500',
+            'tgl_lahir' => 'required|date',
+            'no_hp' => 'required|string|max:20',
+            'pekerjaan' => 'required|string|max:100',
+        ], [
+            'name.required' => 'Nama wajib diisi.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email sudah terdaftar.',
+            'password.required' => 'Password wajib diisi.',
+            'password.min' => 'Password minimal 6 karakter.',
+            'alamat.required' => 'Alamat wajib diisi.',
+            'tgl_lahir.required' => 'Tanggal lahir wajib diisi.',
+            'no_hp.required' => 'Nomor HP wajib diisi.',
+            'pekerjaan.required' => 'Pekerjaan wajib diisi.',
+        ]);
+
+        if ($validator->fails()) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data tidak valid.',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            return back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            // Create user
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => bcrypt($request->password),
+                'role' => 'customer',
+            ]);
+
+            // Create customer profile
+            Customer::create([
+                'user_id' => $user->id,
+                'alamat' => $request->alamat,
+                'tgl_lahir' => $request->tgl_lahir,
+                'no_hp' => $request->no_hp,
+                'pekerjaan' => $request->pekerjaan,
+            ]);
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Customer berhasil ditambahkan.',
+                    'customer' => $user->load('customer')
+                ]);
+            }
+
+            return back()->with('success', 'Customer berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat menambahkan customer.'
+                ], 500);
+            }
+            return back()->withErrors(['error' => 'Terjadi kesalahan saat menambahkan customer.'])->withInput();
+        }
+    }
+
+    /**
+     * Update customer data
+     */
+    public function updateCustomer(Request $request, User $user)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'alamat' => 'required|string|max:500',
+            'tgl_lahir' => 'required|date',
+            'no_hp' => 'required|string|max:20',
+            'pekerjaan' => 'required|string|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data tidak valid.',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            return back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            // Update user
+            $user->update([
+                'name' => $request->name,
+                'email' => $request->email,
+            ]);
+
+            // Update or create customer profile
+            $user->customer()->updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'alamat' => $request->alamat,
+                    'tgl_lahir' => $request->tgl_lahir,
+                    'no_hp' => $request->no_hp,
+                    'pekerjaan' => $request->pekerjaan,
+                ]
+            );
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data customer berhasil diperbarui.',
+                    'customer' => $user->fresh()->load('customer')
+                ]);
+            }
+
+            return back()->with('success', 'Data customer berhasil diperbarui.');
+        } catch (\Exception $e) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat memperbarui data customer.'
+                ], 500);
+            }
+            return back()->withErrors(['error' => 'Terjadi kesalahan saat memperbarui data customer.'])->withInput();
+        }
+    }
+
     // ============ ORDER MANAGEMENT ============
+
+    /**
+     * Store new order (manual creation by admin)
+     */
+    public function storeOrder(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'status' => 'required|in:pending,paid,shipped,delivered,canceled',
+        ], [
+            'user_id.required' => 'Customer wajib dipilih.',
+            'user_id.exists' => 'Customer tidak ditemukan.',
+            'items.required' => 'Produk wajib dipilih.',
+            'items.min' => 'Minimal harus ada 1 produk.',
+            'items.*.product_id.required' => 'Produk wajib dipilih.',
+            'items.*.product_id.exists' => 'Produk tidak ditemukan.',
+            'items.*.quantity.required' => 'Kuantitas wajib diisi.',
+            'items.*.quantity.min' => 'Kuantitas minimal 1.',
+            'status.required' => 'Status wajib dipilih.',
+        ]);
+
+        if ($validator->fails()) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data tidak valid.',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            return back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            $total = 0;
+            $orderItems = [];
+
+            // Calculate total and prepare order items
+            foreach ($request->items as $item) {
+                $product = Product::find($item['product_id']);
+                if (!$product) {
+                    throw new \Exception('Produk tidak ditemukan.');
+                }
+
+                $subtotal = $product->harga * $item['quantity'];
+                $total += $subtotal;
+
+                $orderItems[] = [
+                    'product_id' => $product->id,
+                    'jumlah_item' => $item['quantity'],
+                    'sub_total' => $subtotal,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+
+            // Create order
+            $order = Order::create([
+                'user_id' => $request->user_id,
+                'total' => $total,
+                'status' => $request->status,
+                'bukti_bayar' => null, // Manual orders don't need payment proof
+            ]);
+
+            // Create order items
+            foreach ($orderItems as &$orderItem) {
+                $orderItem['order_id'] = $order->id;
+            }
+            $order->orderItems()->createMany($orderItems);
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pesanan berhasil dibuat.',
+                    'order' => $order->load(['user', 'orderItems.product'])
+                ]);
+            }
+
+            return back()->with('success', 'Pesanan berhasil dibuat.');
+        } catch (\Exception $e) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat membuat pesanan: ' . $e->getMessage()
+                ], 500);
+            }
+            return back()->withErrors(['error' => 'Terjadi kesalahan saat membuat pesanan: ' . $e->getMessage()])->withInput();
+        }
+    }
+
+    /**
+     * Get products for order creation (AJAX)
+     */
+    public function getProducts(Request $request)
+    {
+        $products = Product::where('stok', '>', 0)
+            ->select('id', 'nama', 'harga', 'stok')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'products' => $products
+        ]);
+    }
+
+    /**
+     * Get customers for order creation (AJAX)
+     */
+    public function getCustomers(Request $request)
+    {
+        $customers = User::where('role', 'customer')
+            ->with('customer:user_id,alamat,no_hp')
+            ->select('id', 'name', 'email')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'customers' => $customers
+        ]);
+    }
 
     /**
      * Show all orders
@@ -297,5 +602,49 @@ class AdminController extends Controller
             }
             return back()->withErrors(['error' => 'Terjadi kesalahan saat memperbarui status pesanan.']);
         }
+    }
+
+    // ============ REPORTS ============
+
+    /**
+     * Show reports page
+     */
+    public function reports()
+    {
+        // Monthly sales for last 12 months
+        $monthlySales = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $total = Order::whereYear('created_at', $date->year)
+                         ->whereMonth('created_at', $date->month)
+                         ->where('status', 'paid')
+                         ->sum('total');
+            
+            $monthlySales[] = [
+                'month' => $date->format('M Y'),
+                'total' => $total
+            ];
+        }
+
+        // Top selling products
+        $topProducts = Product::withSum('orderItems', 'jumlah_item')
+            ->orderBy('order_items_sum_jumlah_item', 'desc')
+            ->take(10)
+            ->get();
+
+        // Recent sales statistics
+        $stats = [
+            'total_sales_this_month' => Order::whereYear('created_at', now()->year)
+                                           ->whereMonth('created_at', now()->month)
+                                           ->where('status', 'paid')
+                                           ->sum('total'),
+            'total_orders_this_month' => Order::whereYear('created_at', now()->year)
+                                            ->whereMonth('created_at', now()->month)
+                                            ->count(),
+            'total_revenue' => Order::where('status', 'paid')->sum('total'),
+            'total_orders' => Order::count(),
+        ];
+
+        return view('admin.reports.index', compact('monthlySales', 'topProducts', 'stats'));
     }
 }

@@ -43,12 +43,30 @@
                                                 <p class="text-muted mb-0 small">
                                                     {{ isset($item['deskripsi']) ? Str::limit($item['deskripsi'], 60) : 'Deskripsi tidak tersedia' }}
                                                 </p>
+                                                @if($item['has_discount'])
+                                                    <div class="mt-1">
+                                                        <span class="badge bg-warning text-dark small">
+                                                            <i class="fas fa-percent"></i> Diskon {{ $item['discount_percent'] }}%
+                                                        </span>
+                                                    </div>
+                                                @endif
                                             </div>
                                             
                                             <div class="col-md-2 text-center">
-                                                <strong class="text-success">
-                                                    Rp {{ number_format($item['price'] ?? 0, 0, ',', '.') }}
-                                                </strong>
+                                                @if($item['has_discount'])
+                                                    <div>
+                                                        <small class="text-muted text-decoration-line-through">
+                                                            Rp {{ number_format($item['original_price'] ?? 0, 0, ',', '.') }}
+                                                        </small>
+                                                    </div>
+                                                    <strong class="text-success">
+                                                        Rp {{ number_format($item['price'] ?? 0, 0, ',', '.') }}
+                                                    </strong>
+                                                @else
+                                                    <strong class="text-success">
+                                                        Rp {{ number_format($item['price'] ?? 0, 0, ',', '.') }}
+                                                    </strong>
+                                                @endif
                                             </div>
                                             
                                             <div class="col-md-3">
@@ -86,6 +104,18 @@
                                         
                                         <div class="row mt-2">
                                             <div class="col-12 text-end">
+                                                @if($item['has_discount'])
+                                                    <div class="text-muted small mb-1">
+                                                        Subtotal Normal: 
+                                                        <span class="text-decoration-line-through">
+                                                            Rp {{ number_format(($item['original_price'] ?? 0) * ($item['quantity'] ?? 1), 0, ',', '.') }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="text-success small mb-1">
+                                                        <i class="fas fa-arrow-down"></i> Hemat: 
+                                                        <strong>Rp {{ number_format($item['item_discount_amount'] ?? 0, 0, ',', '.') }}</strong>
+                                                    </div>
+                                                @endif
                                                 <strong>
                                                     Subtotal: 
                                                     <span class="text-success item-subtotal">
@@ -112,10 +142,32 @@
                                     <span>Jumlah Item:</span>
                                     <strong class="total-items">{{ array_sum(array_map(function($item) { return $item['quantity'] ?? 0; }, $cart)) }}</strong>
                                 </div>
+                                @if($totalDiscount > 0)
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Subtotal:</span>
+                                        <span class="text-muted">Rp {{ number_format($originalTotal, 0, ',', '.') }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-success">
+                                            <i class="fas fa-percent"></i> Total Diskon:
+                                        </span>
+                                        <span class="text-success">- Rp {{ number_format($totalDiscount, 0, ',', '.') }}</span>
+                                    </div>
+                                    <hr>
+                                @endif
                                 <div class="d-flex justify-content-between mb-3">
                                     <span>Total Belanja:</span>
                                     <strong class="text-success cart-total">Rp {{ number_format($total, 0, ',', '.') }}</strong>
                                 </div>
+                                @if($totalDiscount > 0)
+                                    <div class="alert alert-success py-2 mb-3" role="alert">
+                                        <small>
+                                            <i class="fas fa-check-circle"></i> 
+                                            Anda hemat <strong>Rp {{ number_format($totalDiscount, 0, ',', '.') }}</strong> 
+                                            dengan diskon personal!
+                                        </small>
+                                    </div>
+                                @endif
                                 <hr>
                                 <div class="d-grid gap-2">
                                     <a href="{{ route('customer.checkout') }}" class="btn btn-success btn-lg">

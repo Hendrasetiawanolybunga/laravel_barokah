@@ -38,4 +38,36 @@ class Customer extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * Check if customer is having birthday today
+     */
+    public function isBirthdayToday(): bool
+    {
+        if (!$this->tgl_lahir) {
+            return false;
+        }
+
+        return $this->tgl_lahir->format('m-d') === now()->format('m-d');
+    }
+
+    /**
+     * Check if customer is having birthday this month
+     */
+    public function isBirthdayThisMonth(): bool
+    {
+        if (!$this->tgl_lahir) {
+            return false;
+        }
+
+        return $this->tgl_lahir->format('m') === now()->format('m');
+    }
+
+    /**
+     * Get formatted birthday date
+     *
+    public function getBirthdayFormattedAttribute(): string
+    {
+        return $this->tgl_lahir ? $this->tgl_lahir->format('d M') : '-';
+    }
 }

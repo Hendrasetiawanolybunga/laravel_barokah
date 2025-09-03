@@ -1,9 +1,9 @@
 @extends('layouts.app')
 
-@section('title', 'Admin Dashboard - Laravel Barokah')
+@section('title', 'Admin Dashboard - UD. Barokah Jaya Beton')
 
 @section('content')
-<div class="container-fluid py-4 admin-dashboard-container">
+<div class="container-fluid py-4 px-5">
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
@@ -141,7 +141,7 @@
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-3">
-                            <a href="{{ route('admin.products.create') }}" class="btn btn-primary w-100">
+                            <a href="{{ route('admin.products') }}" class="btn btn-primary w-100">
                                 <i class="fas fa-plus"></i> Tambah Produk Baru
                             </a>
                         </div>

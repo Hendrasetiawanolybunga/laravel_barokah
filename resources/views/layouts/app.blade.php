@@ -61,9 +61,48 @@
             color: white;
         }
         
+        /* Enhanced navbar styling with rounded corners and transparency */
+        .navbar {
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .navbar.bg-white {
+            background-color: rgba(255, 255, 255, 0.95) !important;
+        }
+        
+        .navbar.bg-primary {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.95), rgba(69, 160, 73, 0.95)) !important;
+        }
+        
         .navbar-brand {
             font-weight: bold;
-            color:#e8f5e8;
+            color: #e8f5e8;
+            font-size: 1.25rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .navbar-brand:hover {
+            transform: scale(1.05);
+        }
+        
+        .nav-link {
+            border-radius: 8px;
+            margin: 0 2px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            font-weight: 600;
         }
         
         .alert {
@@ -103,6 +142,43 @@
             align-items: center;
             justify-content: center;
             font-size: 12px;
+        }
+        
+        /* Notification and Cart Indicators */
+        .notification-dot {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #28a745;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid white;
+            animation: pulse 2s infinite;
+        }
+        
+        .cart-indicator-dot {
+            position: absolute;
+            top: -2px;
+            right: 15px;
+            background: #28a745;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            border: 1px solid white;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+            }
         }
         
         /* COMPREHENSIVE RESPONSIVE DESIGN */
@@ -223,5 +299,11 @@
     </script>
     
     @stack('scripts')
+    
+    <!-- Profile Edit Modal for Customers -->
+    @if(auth()->check() && auth()->user()->isCustomer())
+        @include('customer.partials.profile-modal')
+        @include('customer.partials.notification-modal')
+    @endif
 </body>
 </html>

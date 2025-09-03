@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Kelola Pesanan - Admin Laravel Barokah')
+@section('title', 'Kelola Pesanan - Admin UD. Barokah Jaya Beton')
 
 @section('content')
 <div class="container-fluid py-4">
@@ -15,6 +15,9 @@
                     <p class="text-muted mb-0">Proses dan kelola semua pesanan pelanggan</p>
                 </div>
                 <div>
+                    <button class="btn btn-success me-2" onclick="openCreateOrderModal()">
+                        <i class="fas fa-plus"></i> Buat Pesanan Baru
+                    </button>
                     <span class="badge bg-primary fs-6">
                         Total: {{ $orders->total() }} Pesanan
                     </span>
@@ -237,6 +240,102 @@
     </div>
 </div>
 
+<!-- Create Order Modal -->
+<div class="modal fade" id="createOrderModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus-circle"></i> Buat Pesanan Baru
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createOrderForm">
+                @csrf
+                <div class="modal-body">
+                    <!-- Customer Selection -->
+                    <div class="mb-3">
+                        <label for="customer_id" class="form-label">Pilih Pelanggan <span class="text-danger">*</span></label>
+                        <select class="form-select" id="customer_id" name="user_id" required>
+                            <option value="">-- Pilih Pelanggan --</option>
+                        </select>
+                        <div class="form-text">
+                            <button type="button" class="btn btn-sm btn-outline-success" onclick="openCreateCustomerFromOrder()">
+                                <i class="fas fa-user-plus"></i> Buat Pelanggan Baru
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Order Status -->
+                    <div class="mb-3">
+                        <label for="order_status" class="form-label">Status Pesanan <span class="text-danger">*</span></label>
+                        <select class="form-select" id="order_status" name="status" required>
+                            <option value="pending">Pending</option>
+                            <option value="paid" selected>Paid (Dibayar)</option>
+                            <option value="shipped">Shipped (Dikirim)</option>
+                            <option value="delivered">Delivered (Selesai)</option>
+                        </select>
+                    </div>
+
+                    <!-- Products Section -->
+                    <div class="mb-3">
+                        <label class="form-label">Produk <span class="text-danger">*</span></label>
+                        <div id="products-container">
+                            <div class="product-item border rounded p-3 mb-2">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <select class="form-select product-select" name="items[0][product_id]" required>
+                                            <option value="">-- Pilih Produk --</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="number" class="form-control quantity-input" 
+                                               name="items[0][quantity]" placeholder="Jumlah" min="1" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="product-price text-success fw-bold">Rp 0</div>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-product" 
+                                                onclick="removeProduct(this)" style="display: none;">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addProduct()">
+                            <i class="fas fa-plus"></i> Tambah Produk
+                        </button>
+                    </div>
+
+                    <!-- Total -->
+                    <div class="row">
+                        <div class="col-md-6 ms-auto">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>Total Pesanan:</strong>
+                                        <strong class="text-success" id="order-total">Rp 0</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Batal
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> Buat Pesanan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Loading Modal -->
 <div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-sm">
@@ -254,10 +353,214 @@
 
 @push('scripts')
 <script>
+    let customerData = [];
+    let productData = [];
+    let productIndex = 0;
+
     function viewPaymentProof(imageUrl) {
         document.getElementById('paymentProofImage').src = imageUrl;
         const modal = new bootstrap.Modal(document.getElementById('paymentProofModal'));
         modal.show();
+    }
+
+    function openCreateOrderModal() {
+        // Load customers and products
+        loadCustomers();
+        loadProducts();
+        
+        // Reset form
+        document.getElementById('createOrderForm').reset();
+        resetProductsContainer();
+        
+        const modal = new bootstrap.Modal(document.getElementById('createOrderModal'));
+        modal.show();
+    }
+
+    function loadCustomers() {
+        $.ajax({
+            url: '/admin/api/customers',
+            method: 'GET',
+            success: function(response) {
+                customerData = response.customers;
+                const select = document.getElementById('customer_id');
+                select.innerHTML = '<option value="">-- Pilih Pelanggan --</option>';
+                
+                response.customers.forEach(function(customer) {
+                    const option = document.createElement('option');
+                    option.value = customer.id;
+                    option.textContent = `${customer.name} (${customer.email})`;
+                    select.appendChild(option);
+                });
+            },
+            error: function() {
+                alert('Gagal memuat data pelanggan');
+            }
+        });
+    }
+
+    function loadProducts() {
+        $.ajax({
+            url: '/admin/api/products',
+            method: 'GET',
+            success: function(response) {
+                productData = response.products;
+                updateProductSelects();
+            },
+            error: function() {
+                alert('Gagal memuat data produk');
+            }
+        });
+    }
+
+    function updateProductSelects() {
+        document.querySelectorAll('.product-select').forEach(function(select) {
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">-- Pilih Produk --</option>';
+            
+            productData.forEach(function(product) {
+                const option = document.createElement('option');
+                option.value = product.id;
+                option.textContent = `${product.nama} - Rp ${new Intl.NumberFormat('id-ID').format(product.harga)} (Stok: ${product.stok})`;
+                option.dataset.price = product.harga;
+                option.dataset.stock = product.stok;
+                select.appendChild(option);
+            });
+            
+            if (currentValue) {
+                select.value = currentValue;
+            }
+        });
+    }
+
+    function addProduct() {
+        productIndex++;
+        const container = document.getElementById('products-container');
+        const newItem = document.createElement('div');
+        newItem.className = 'product-item border rounded p-3 mb-2';
+        newItem.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <select class="form-select product-select" name="items[${productIndex}][product_id]" required>
+                        <option value="">-- Pilih Produk --</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" class="form-control quantity-input" 
+                           name="items[${productIndex}][quantity]" placeholder="Jumlah" min="1" required>
+                </div>
+                <div class="col-md-2">
+                    <div class="product-price text-success fw-bold">Rp 0</div>
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-product" 
+                            onclick="removeProduct(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        container.appendChild(newItem);
+        
+        // Update product selects and add event listeners
+        updateProductSelects();
+        addProductEventListeners(newItem);
+        
+        // Show remove buttons if more than one product
+        updateRemoveButtons();
+    }
+
+    function removeProduct(button) {
+        button.closest('.product-item').remove();
+        updateRemoveButtons();
+        calculateTotal();
+    }
+
+    function updateRemoveButtons() {
+        const items = document.querySelectorAll('.product-item');
+        items.forEach(function(item, index) {
+            const removeBtn = item.querySelector('.remove-product');
+            if (items.length > 1) {
+                removeBtn.style.display = 'block';
+            } else {
+                removeBtn.style.display = 'none';
+            }
+        });
+    }
+
+    function resetProductsContainer() {
+        productIndex = 0;
+        const container = document.getElementById('products-container');
+        container.innerHTML = `
+            <div class="product-item border rounded p-3 mb-2">
+                <div class="row">
+                    <div class="col-md-6">
+                        <select class="form-select product-select" name="items[0][product_id]" required>
+                            <option value="">-- Pilih Produk --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" class="form-control quantity-input" 
+                               name="items[0][quantity]" placeholder="Jumlah" min="1" required>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="product-price text-success fw-bold">Rp 0</div>
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-product" 
+                                onclick="removeProduct(this)" style="display: none;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add event listeners to the initial product item
+        addProductEventListeners(container.querySelector('.product-item'));
+    }
+
+    function addProductEventListeners(productItem) {
+        const productSelect = productItem.querySelector('.product-select');
+        const quantityInput = productItem.querySelector('.quantity-input');
+        const priceDiv = productItem.querySelector('.product-price');
+
+        productSelect.addEventListener('change', function() {
+            updateProductPrice(this, priceDiv, quantityInput);
+        });
+
+        quantityInput.addEventListener('input', function() {
+            updateProductPrice(productSelect, priceDiv, this);
+        });
+    }
+
+    function updateProductPrice(productSelect, priceDiv, quantityInput) {
+        const selectedOption = productSelect.options[productSelect.selectedIndex];
+        const price = selectedOption.dataset.price || 0;
+        const quantity = quantityInput.value || 0;
+        const total = price * quantity;
+        
+        priceDiv.textContent = `Rp ${new Intl.NumberFormat('id-ID').format(total)}`;
+        calculateTotal();
+    }
+
+    function calculateTotal() {
+        let total = 0;
+        document.querySelectorAll('.product-item').forEach(function(item) {
+            const productSelect = item.querySelector('.product-select');
+            const quantityInput = item.querySelector('.quantity-input');
+            const selectedOption = productSelect.options[productSelect.selectedIndex];
+            const price = selectedOption.dataset.price || 0;
+            const quantity = quantityInput.value || 0;
+            total += price * quantity;
+        });
+        
+        document.getElementById('order-total').textContent = `Rp ${new Intl.NumberFormat('id-ID').format(total)}`;
+    }
+
+    function openCreateCustomerFromOrder() {
+        // This would open the customer creation modal
+        // For now, just alert the user
+        alert('Fitur tambah pelanggan akan segera tersedia. Silakan gunakan menu Pelanggan untuk menambah pelanggan baru.');
     }
     
     function updateStatus(orderId, newStatus) {
@@ -348,5 +651,68 @@
             modal.hide();
         }
     }
+
+    // Handle create order form submission
+    document.getElementById('createOrderForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        showLoading();
+        
+        const formData = new FormData(this);
+        
+        $.ajax({
+            url: '/admin/orders',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                hideLoading();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('createOrderModal'));
+                modal.hide();
+                
+                if (response.success) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Berhasil!',
+                            text: 'Pesanan berhasil dibuat!',
+                            icon: 'success',
+                            confirmButtonColor: '#4CAF50'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        alert('Pesanan berhasil dibuat!');
+                        location.reload();
+                    }
+                } else {
+                    alert(response.message || 'Terjadi kesalahan saat membuat pesanan.');
+                }
+            },
+            error: function(xhr, status, error) {
+                hideLoading();
+                
+                if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    let errorMsg = 'Terjadi kesalahan:\n';
+                    Object.values(xhr.responseJSON.errors).forEach(function(errors) {
+                        errors.forEach(function(error) {
+                            errorMsg += '- ' + error + '\n';
+                        });
+                    });
+                    alert(errorMsg);
+                } else {
+                    alert('Terjadi kesalahan saat membuat pesanan.');
+                }
+            }
+        });
+    });
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add event listeners to initial product item if it exists
+        const initialProductItem = document.querySelector('.product-item');
+        if (initialProductItem) {
+            addProductEventListeners(initialProductItem);
+        }
+    });
 </script>
 @endpush

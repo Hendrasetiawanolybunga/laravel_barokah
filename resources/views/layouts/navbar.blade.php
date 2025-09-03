@@ -70,6 +70,18 @@
                         <i class="fas fa-shopping-cart"></i> Pesanan
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('admin.crm*') ? 'active' : '' }}" 
+                       href="{{ route('admin.crm.index') }}">
+                        <i class="fas fa-heart"></i> CRM
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('admin.reports*') ? 'active' : '' }}" 
+                       href="{{ route('admin.reports') }}">
+                        <i class="fas fa-chart-bar"></i> Laporan
+                    </a>
+                </li>
             </ul>
             
             <ul class="navbar-nav">
@@ -119,6 +131,15 @@
                         <i class="fas fa-history"></i> Pesanan Saya
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link position-relative {{ request()->routeIs('customer.notifications*') ? 'active' : '' }}" 
+                       href="{{ route('customer.notifications') }}">
+                        <i class="fas fa-bell fa-lg"></i>
+                        @if(auth()->user()->hasUnreadNotifications())
+                            <span class="notification-dot"></span>
+                        @endif
+                    </a>
+                </li>
             </ul>
             
             <ul class="navbar-nav">
@@ -127,6 +148,7 @@
                         <i class="fas fa-shopping-cart fa-lg"></i>
                         @if(isset($cartCount) && $cartCount > 0)
                             <span class="cart-badge">{{ $cartCount }}</span>
+                            <span class="cart-indicator-dot"></span>
                         @endif
                     </a>
                 </li>
@@ -135,6 +157,12 @@
                         <i class="fas fa-user-circle"></i> {{ auth()->user()->name }}
                     </a>
                     <ul class="dropdown-menu">
+                        <li>
+                            <a href="#" class="dropdown-item" onclick="openProfileModal()">
+                                <i class="fas fa-user-edit"></i> Edit Profil
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
                         <li>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf

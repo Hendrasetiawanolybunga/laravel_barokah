@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Login - Laravel Barokah')
+@section('title', 'Login - UD. Barokah Jaya Beton')
 
 @section('content')
 <div class="container py-5">

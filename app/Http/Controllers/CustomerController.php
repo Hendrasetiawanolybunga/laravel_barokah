@@ -5,23 +5,218 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Hash;
 use App\Models\Product;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\PersonalDiscount;
+use App\Models\User;
 use Carbon\Carbon;
 
 class CustomerController extends Controller
 {
     /**
-     * Show customer home with admin message and product catalog
+     * Show customer home with admin message, discount notifications, and product catalog
      */
     public function home()
     {
         $user = auth()->user();
         $products = Product::where('stok', '>', 0)->paginate(12);
         $cartCount = $this->getCartItemCount();
+        
+        // Get user's active personal discounts
+        $activeDiscounts = PersonalDiscount::where('user_id', $user->id)
+            ->active()
+            ->with('product:id,nama,harga')
+            ->get();
+        
+        // Check if today is user's birthday using customer relationship
+        $isBirthday = $user->customer && 
+                     $user->customer->tgl_lahir && 
+                     $user->customer->tgl_lahir->format('m-d') === now()->format('m-d');
+        
+        // Get user's spending for loyalty status
+        $totalSpending = $user->orders()
+            ->where('status', 'delivered')
+            ->sum('total');
+        
+        $isLoyalCustomer = $totalSpending > 5000000; // 5M threshold for loyal customer
 
-        return view('customer.home', compact('user', 'products', 'cartCount'));
+        return view('customer.home', compact(
+            'user', 'products', 'cartCount', 'activeDiscounts', 
+            'isBirthday', 'totalSpending', 'isLoyalCustomer'
+        ));
+    }
+
+    // ============ NOTIFICATION FUNCTIONALITY ============
+
+    /**
+     * Show customer notifications page
+     */
+    public function notifications()
+    {
+        $user = auth()->user();
+        
+        // Get user's active personal discounts
+        $activeDiscounts = PersonalDiscount::where('user_id', $user->id)
+            ->active()
+            ->with('product:id,nama,harga')
+            ->get();
+        
+        return view('customer.notifications', compact('user', 'activeDiscounts'));
+    }
+
+    /**
+     * Mark notification as read (AJAX)
+     */
+    public function markNotificationRead(Request $request)
+    {
+        $user = auth()->user();
+        
+        try {
+            if ($request->type === 'message') {
+                $user->markMessageAsRead();
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Notifikasi ditandai sudah dibaca'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan'
+            ], 500);
+        }
+    }
+
+    /**
+     * Mark all notifications as read (AJAX)
+     */
+    public function markAllNotificationsRead(Request $request)
+    {
+        $user = auth()->user();
+        
+        try {
+            $user->markMessageAsRead();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Semua notifikasi ditandai sudah dibaca'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan'
+            ], 500);
+        }
+    }
+
+    // ============ PROFILE MANAGEMENT ============
+
+    /**
+     * Show profile edit form (returns JSON for modal)
+     */
+    public function editProfile()
+    {
+        $user = auth()->user();
+        $customer = $user->customer;
+        
+        return response()->json([
+            'success' => true,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'customer' => $customer ? [
+                    'alamat' => $customer->alamat,
+                    'no_hp' => $customer->no_hp,
+                    'tgl_lahir' => $customer->tgl_lahir ? $customer->tgl_lahir->format('Y-m-d') : null,
+                ] : null
+            ]
+        ]);
+    }
+
+    /**
+     * Update customer profile
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = auth()->user();
+        
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'nullable|string|min:8|confirmed',
+            'alamat' => 'nullable|string|max:500',
+            'no_hp' => 'nullable|string|max:20',
+            'tgl_lahir' => 'nullable|date|before:today',
+        ], [
+            'name.required' => 'Nama wajib diisi.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email sudah digunakan oleh akun lain.',
+            'password.min' => 'Password minimal 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
+            'tgl_lahir.before' => 'Tanggal lahir harus sebelum hari ini.',
+        ]);
+
+        if ($validator->fails()) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            return back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            // Update user data
+            $userData = [
+                'name' => $request->name,
+                'email' => $request->email,
+            ];
+            
+            if (!empty($request->password)) {
+                $userData['password'] = Hash::make($request->password);
+            }
+            
+            $user->update($userData);
+
+            // Update or create customer profile
+            if ($user->customer) {
+                $user->customer->update([
+                    'alamat' => $request->alamat,
+                    'no_hp' => $request->no_hp,
+                    'tgl_lahir' => $request->tgl_lahir ? Carbon::parse($request->tgl_lahir) : null,
+                ]);
+            } else {
+                $user->customer()->create([
+                    'alamat' => $request->alamat,
+                    'no_hp' => $request->no_hp,
+                    'tgl_lahir' => $request->tgl_lahir ? Carbon::parse($request->tgl_lahir) : null,
+                ]);
+            }
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Profil berhasil diperbarui.'
+                ]);
+            }
+            
+            return back()->with('success', 'Profil berhasil diperbarui.');
+            
+        } catch (\Exception $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat memperbarui profil.'
+                ], 500);
+            }
+            return back()->withErrors(['error' => 'Terjadi kesalahan saat memperbarui profil.']);
+        }
     }
 
     // ============ SHOPPING CART FUNCTIONALITY ============
@@ -130,14 +325,14 @@ class CustomerController extends Controller
     }
 
     /**
-     * Show cart
+     * Show cart with personal discounts applied
      */
     public function showCart()
     {
         $cartSession = session()->get('cart', []);
         
         if (empty($cartSession)) {
-            return view('customer.cart', ['cart' => [], 'total' => 0]);
+            return view('customer.cart', ['cart' => [], 'total' => 0, 'originalTotal' => 0, 'totalDiscount' => 0]);
         }
         
         // Get product IDs from cart
@@ -146,25 +341,63 @@ class CustomerController extends Controller
         // Fetch complete product data from database
         $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
         
+        // Get user's active personal discounts for cart products with explicit expiration check
+        $userDiscounts = PersonalDiscount::where('user_id', auth()->id())
+            ->whereIn('product_id', $productIds)
+            ->active()
+            ->with('product:id,nama')
+            ->get()
+            ->filter(function ($discount) {
+                return $discount->isValid(); // Double-check expiration
+            })
+            ->keyBy('product_id');
+        
         $cart = [];
         $total = 0;
+        $originalTotal = 0;
+        $totalDiscount = 0;
         
         foreach ($cartSession as $productId => $sessionItem) {
             $product = $products->get($productId);
             
             if ($product) {
+                $originalPrice = $product->harga;
+                $finalPrice = $originalPrice;
+                $discountPercent = 0;
+                $hasDiscount = false;
+                
+                // Check if user has personal discount for this product
+                if ($userDiscounts->has($productId)) {
+                    $discount = $userDiscounts->get($productId);
+                    if ($discount->isValid()) {
+                        $finalPrice = $discount->applyDiscount($originalPrice);
+                        $discountPercent = $discount->persen_diskon;
+                        $hasDiscount = true;
+                    }
+                }
+                
+                $itemOriginalTotal = $originalPrice * $sessionItem['quantity'];
+                $itemFinalTotal = $finalPrice * $sessionItem['quantity'];
+                
                 $cart[$productId] = [
                     'nama' => $product->nama,
                     'deskripsi' => $product->deskripsi,
                     'foto' => $product->foto,
-                    'price' => $product->harga,
+                    'price' => $finalPrice,
+                    'original_price' => $originalPrice,
                     'quantity' => $sessionItem['quantity'],
                     'stok' => $product->stok,
+                    'has_discount' => $hasDiscount,
+                    'discount_percent' => $discountPercent,
+                    'item_discount_amount' => $itemOriginalTotal - $itemFinalTotal,
                 ];
                 
-                $total += $product->harga * $sessionItem['quantity'];
+                $total += $itemFinalTotal;
+                $originalTotal += $itemOriginalTotal;
             }
         }
+        
+        $totalDiscount = $originalTotal - $total;
         
         // Clean up cart session if any products no longer exist
         if (count($cart) !== count($cartSession)) {
@@ -177,13 +410,13 @@ class CustomerController extends Controller
             session()->put('cart', $cleanCart);
         }
 
-        return view('customer.cart', compact('cart', 'total'));
+        return view('customer.cart', compact('cart', 'total', 'originalTotal', 'totalDiscount'));
     }
 
     // ============ CHECKOUT FUNCTIONALITY ============
 
     /**
-     * Show checkout page
+     * Show checkout page with personal discounts applied
      */
     public function checkout()
     {
@@ -199,27 +432,71 @@ class CustomerController extends Controller
         // Fetch complete product data from database
         $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
         
+        // Get user's active personal discounts for cart products with explicit expiration check
+        $userDiscounts = PersonalDiscount::where('user_id', auth()->id())
+            ->whereIn('product_id', $productIds)
+            ->active()
+            ->with('product:id,nama')
+            ->get()
+            ->filter(function ($discount) {
+                return $discount->isValid(); // Double-check expiration
+            })
+            ->keyBy('product_id');
+        
         $cart = [];
         $total = 0;
+        $originalTotal = 0;
+        $totalDiscount = 0;
+        $appliedDiscounts = [];
         
         foreach ($cartSession as $productId => $sessionItem) {
             $product = $products->get($productId);
             
             if ($product) {
+                $originalPrice = $product->harga;
+                $finalPrice = $originalPrice;
+                $discountPercent = 0;
+                $hasDiscount = false;
+                
+                // Check if user has personal discount for this product
+                if ($userDiscounts->has($productId)) {
+                    $discount = $userDiscounts->get($productId);
+                    if ($discount->isValid()) {
+                        $finalPrice = $discount->applyDiscount($originalPrice);
+                        $discountPercent = $discount->persen_diskon;
+                        $hasDiscount = true;
+                        
+                        $appliedDiscounts[] = [
+                            'product_name' => $product->nama,
+                            'discount_percent' => $discountPercent,
+                            'savings' => ($originalPrice - $finalPrice) * $sessionItem['quantity']
+                        ];
+                    }
+                }
+                
+                $itemOriginalTotal = $originalPrice * $sessionItem['quantity'];
+                $itemFinalTotal = $finalPrice * $sessionItem['quantity'];
+                
                 $cart[$productId] = [
                     'nama' => $product->nama,
                     'deskripsi' => $product->deskripsi,
                     'foto' => $product->foto,
-                    'price' => $product->harga,
+                    'price' => $finalPrice,
+                    'original_price' => $originalPrice,
                     'quantity' => $sessionItem['quantity'],
                     'stok' => $product->stok,
+                    'has_discount' => $hasDiscount,
+                    'discount_percent' => $discountPercent,
                 ];
                 
-                $total += $product->harga * $sessionItem['quantity'];
+                $total += $itemFinalTotal;
+                $originalTotal += $itemOriginalTotal;
             }
         }
+        
+        $totalDiscount = $originalTotal - $total;
 
-        return view('customer.checkout', compact('cart', 'total'));
+        return view('customer.checkout', compact('cart', 'total', 'originalTotal', 'totalDiscount', 'appliedDiscounts'));
     }
 
     /**
@@ -251,19 +528,47 @@ class CustomerController extends Controller
         $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
         
         try {
-            // Calculate total
+            // Get user's active personal discounts for cart products
+            $userDiscounts = PersonalDiscount::where('user_id', auth()->id())
+                ->whereIn('product_id', $productIds)
+                ->active()
+                ->get()
+                ->keyBy('product_id');
+            
+            // Calculate total with discounts applied
             $total = 0;
+            $originalTotal = 0;
+            $appliedDiscounts = [];
+            
             foreach ($cartSession as $productId => $sessionItem) {
                 $product = $products->get($productId);
                 if ($product) {
-                    $total += $product->harga * $sessionItem['quantity'];
+                    $originalPrice = $product->harga;
+                    $finalPrice = $originalPrice;
+                    
+                    // Check if user has personal discount for this product
+                    if ($userDiscounts->has($productId)) {
+                        $discount = $userDiscounts->get($productId);
+                        if ($discount->isValid()) {
+                            $finalPrice = $discount->applyDiscount($originalPrice);
+                            $appliedDiscounts[$productId] = [
+                                'discount_id' => $discount->id,
+                                'original_price' => $originalPrice,
+                                'discounted_price' => $finalPrice,
+                                'discount_percent' => $discount->persen_diskon
+                            ];
+                        }
+                    }
+                    
+                    $total += $finalPrice * $sessionItem['quantity'];
+                    $originalTotal += $originalPrice * $sessionItem['quantity'];
                 }
             }
 
             // Upload payment proof
             $buktiPath = $request->file('bukti_bayar')->store('payment-proofs', 'public');
 
-            // Create order
+            // Create order with discounted total
             $order = Order::create([
                 'tanggal' => Carbon::now(),
                 'total' => $total,
@@ -272,15 +577,23 @@ class CustomerController extends Controller
                 'user_id' => auth()->id(),
             ]);
 
-            // Create order items
+            // Create order items with discount information
             foreach ($cartSession as $productId => $sessionItem) {
                 $product = $products->get($productId);
                 if ($product) {
+                    $originalPrice = $product->harga;
+                    $finalPrice = $originalPrice;
+                    
+                    // Apply discount if available
+                    if (isset($appliedDiscounts[$productId])) {
+                        $finalPrice = $appliedDiscounts[$productId]['discounted_price'];
+                    }
+                    
                     OrderItem::create([
                         'order_id' => $order->id,
                         'product_id' => $productId,
                         'jumlah_item' => $sessionItem['quantity'],
-                        'sub_total' => $product->harga * $sessionItem['quantity'],
+                        'sub_total' => $finalPrice * $sessionItem['quantity'],
                     ]);
 
                     // Update product stock

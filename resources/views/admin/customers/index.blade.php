@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Kelola Pelanggan - Admin Laravel Barokah')
+@section('title', 'Kelola Pelanggan - Admin UD. Barokah Jaya Beton')
 
 @section('content')
 <div class="container-fluid py-4">
@@ -15,6 +15,9 @@
                     <p class="text-muted mb-0">Manajemen pelanggan dan program loyalitas</p>
                 </div>
                 <div>
+                    <button class="btn btn-success me-2" onclick="openAddCustomerModal()">
+                        <i class="fas fa-plus"></i> Tambah Pelanggan
+                    </button>
                     <span class="badge bg-primary fs-6">
                         Total: {{ $customers->total() }} Pelanggan
                     </span>
@@ -121,6 +124,14 @@
                                             </td>
                                             <td>
                                                 <div class="btn-group-vertical w-100" role="group">
+                                                    <!-- Edit Customer -->
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-outline-success mb-1"
+                                                            onclick="openEditCustomerModal({{ $customer->id }})"
+                                                            title="Edit Data Pelanggan">
+                                                        <i class="fas fa-edit"></i> Edit
+                                                    </button>
+                                                    
                                                     <!-- Loyalty Toggle -->
                                                     <button type="button" 
                                                             class="btn btn-sm {{ $customer->is_loyal ? 'btn-warning' : 'btn-outline-warning' }} mb-1"
@@ -220,6 +231,160 @@
     </div>
 </div>
 
+<!-- Add Customer Modal -->
+<div class="modal fade" id="addCustomerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus"></i> Tambah Pelanggan Baru
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addCustomerForm">
+                @csrf
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="add_name" class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="add_name" name="name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="add_email" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="add_email" name="email" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="add_password" class="form-label">Password <span class="text-danger">*</span></label>
+                                <input type="password" class="form-control" id="add_password" name="password" required minlength="6">
+                                <div class="form-text">Minimal 6 karakter</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="add_no_hp" class="form-label">Nomor HP <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="add_no_hp" name="no_hp" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="add_tgl_lahir" class="form-label">Tanggal Lahir <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="add_tgl_lahir" name="tgl_lahir" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="add_pekerjaan" class="form-label">Pekerjaan <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="add_pekerjaan" name="pekerjaan" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="add_alamat" class="form-label">Alamat Lengkap <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="add_alamat" name="alamat" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Batal
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> Simpan Pelanggan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Customer Modal -->
+<div class="modal fade" id="editCustomerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-edit"></i> Edit Data Pelanggan
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editCustomerForm">
+                @csrf
+                @method('PUT')
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_name" class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="edit_name" name="name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_email" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="edit_email" name="email" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_no_hp" class="form-label">Nomor HP <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="edit_no_hp" name="no_hp" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_tgl_lahir" class="form-label">Tanggal Lahir <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="edit_tgl_lahir" name="tgl_lahir" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_pekerjaan" class="form-label">Pekerjaan <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="edit_pekerjaan" name="pekerjaan" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Status Bergabung</label>
+                                <input type="text" class="form-control" id="edit_created_at" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_alamat" class="form-label">Alamat Lengkap <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="edit_alamat" name="alamat" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Batal
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Data
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Loading Modal -->
 <div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-sm">
@@ -267,6 +432,50 @@
         modal.show();
     }
     
+    function openAddCustomerModal() {
+        // Reset form
+        document.getElementById('addCustomerForm').reset();
+        
+        const modal = new bootstrap.Modal(document.getElementById('addCustomerModal'));
+        modal.show();
+    }
+    
+    function openEditCustomerModal(userId) {
+        showLoading();
+        
+        // Get customer data
+        $.ajax({
+            url: `/admin/api/customers`,
+            method: 'GET',
+            success: function(response) {
+                hideLoading();
+                
+                const customer = response.customers.find(c => c.id === userId);
+                if (customer) {
+                    document.getElementById('edit_name').value = customer.name;
+                    document.getElementById('edit_email').value = customer.email;
+                    
+                    if (customer.customer) {
+                        document.getElementById('edit_no_hp').value = customer.customer.no_hp || '';
+                        document.getElementById('edit_tgl_lahir').value = customer.customer.tgl_lahir || '';
+                        document.getElementById('edit_pekerjaan').value = customer.customer.pekerjaan || '';
+                        document.getElementById('edit_alamat').value = customer.customer.alamat || '';
+                    }
+                    
+                    document.getElementById('edit_created_at').value = new Date(customer.created_at).toLocaleDateString('id-ID');
+                    document.getElementById('editCustomerForm').action = `/admin/customers/${userId}`;
+                    
+                    const modal = new bootstrap.Modal(document.getElementById('editCustomerModal'));
+                    modal.show();
+                }
+            },
+            error: function(xhr, status, error) {
+                hideLoading();
+                alert('Terjadi kesalahan saat mengambil data customer.');
+            }
+        });
+    }
+    
     function showLoading() {
         const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
         modal.show();
@@ -302,6 +511,96 @@
             error: function(xhr, status, error) {
                 hideLoading();
                 alert('Terjadi kesalahan saat menyimpan pesan.');
+            }
+        });
+    });
+    
+    // Handle add customer form submission
+    document.getElementById('addCustomerForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        showLoading();
+        
+        const formData = new FormData(this);
+        
+        $.ajax({
+            url: '/admin/customers',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                hideLoading();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addCustomerModal'));
+                modal.hide();
+                
+                if (response.success) {
+                    location.reload();
+                } else {
+                    alert(response.message || 'Terjadi kesalahan saat menambahkan customer.');
+                }
+            },
+            error: function(xhr, status, error) {
+                hideLoading();
+                
+                if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    let errorMsg = 'Terjadi kesalahan:\n';
+                    Object.values(xhr.responseJSON.errors).forEach(function(errors) {
+                        errors.forEach(function(error) {
+                            errorMsg += '- ' + error + '\n';
+                        });
+                    });
+                    alert(errorMsg);
+                } else {
+                    alert('Terjadi kesalahan saat menambahkan customer.');
+                }
+            }
+        });
+    });
+    
+    // Handle edit customer form submission
+    document.getElementById('editCustomerForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        showLoading();
+        
+        const formData = new FormData(this);
+        
+        $.ajax({
+            url: this.action,
+            method: 'PUT',
+            data: {
+                name: formData.get('name'),
+                email: formData.get('email'),
+                no_hp: formData.get('no_hp'),
+                tgl_lahir: formData.get('tgl_lahir'),
+                pekerjaan: formData.get('pekerjaan'),
+                alamat: formData.get('alamat'),
+                _token: $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                hideLoading();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editCustomerModal'));
+                modal.hide();
+                
+                if (response.success) {
+                    location.reload();
+                } else {
+                    alert(response.message || 'Terjadi kesalahan saat memperbarui data customer.');
+                }
+            },
+            error: function(xhr, status, error) {
+                hideLoading();
+                
+                if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    let errorMsg = 'Terjadi kesalahan:\n';
+                    Object.values(xhr.responseJSON.errors).forEach(function(errors) {
+                        errors.forEach(function(error) {
+                            errorMsg += '- ' + error + '\n';
+                        });
+                    });
+                    alert(errorMsg);
+                } else {
+                    alert('Terjadi kesalahan saat memperbarui data customer.');
+                }
             }
         });
     });

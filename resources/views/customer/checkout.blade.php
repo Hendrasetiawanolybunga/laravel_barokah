@@ -67,6 +67,37 @@
         </div>
     @endif
 
+    <!-- Discount Summary -->
+    @if(isset($appliedDiscounts) && count($appliedDiscounts) > 0)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-success border-0" role="alert">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-percent"></i> Diskon Personal Diterapkan
+                    </h6>
+                    <div class="row g-3">
+                        @foreach($appliedDiscounts as $discount)
+                            <div class="col-md-4">
+                                <div class="bg-white p-2 rounded border">
+                                    <small class="text-muted">{{ $discount['product_name'] }}</small><br>
+                                    <strong class="text-success">-{{ $discount['discount_percent'] }}%</strong>
+                                    <small class="text-muted d-block">
+                                        Hemat: Rp {{ number_format($discount['savings'], 0, ',', '.') }}
+                                    </small>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    <hr class="my-2">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> 
+                        Total penghematan: <strong>Rp {{ number_format($totalDiscount, 0, ',', '.') }}</strong>
+                    </small>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="row">
         <!-- Order Summary -->
         <div class="col-lg-8">
@@ -94,9 +125,27 @@
                             </div>
                             <div class="col-md-6">
                                 <h6 class="fw-bold mb-1">{{ $item['nama'] ?? 'Nama Produk Tidak Tersedia' }}</h6>
-                                <small class="text-muted">
-                                    Rp {{ number_format($item['price'] ?? 0, 0, ',', '.') }} x {{ $item['quantity'] ?? 1 }}
-                                </small>
+                                <div class="text-muted small">
+                                    @if($item['has_discount'])
+                                        <span class="text-decoration-line-through">
+                                            Rp {{ number_format($item['original_price'] ?? 0, 0, ',', '.') }}
+                                        </span>
+                                        <span class="text-success ms-2">
+                                            Rp {{ number_format($item['price'] ?? 0, 0, ',', '.') }}
+                                        </span>
+                                        <span class="badge bg-warning text-dark ms-2 small">
+                                            -{{ $item['discount_percent'] }}%
+                                        </span>
+                                        <br>
+                                        <small class="text-success">
+                                            <i class="fas fa-arrow-down"></i> Hemat per item: 
+                                            Rp {{ number_format(($item['original_price'] - $item['price']), 0, ',', '.') }}
+                                        </small>
+                                    @else
+                                        Rp {{ number_format($item['price'] ?? 0, 0, ',', '.') }}
+                                    @endif
+                                    x {{ $item['quantity'] ?? 1 }}
+                                </div>
                             </div>
                             <div class="col-md-2">
                                 <span class="badge bg-secondary">{{ $item['quantity'] ?? 1 }} pcs</span>
@@ -175,11 +224,28 @@
                         
                         <!-- Order Total -->
                         <div class="mb-3">
-                            <div class="d-flex justify-content-between">
-                                <span>Subtotal:</span>
-                                <span>Rp {{ number_format($total, 0, ',', '.') }}</span>
-                            </div>
-                            <div class="d-flex justify-content-between">
+                            @if($totalDiscount > 0)
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Subtotal:</span>
+                                    <span class="text-muted">Rp {{ number_format($originalTotal, 0, ',', '.') }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-success">
+                                        <i class="fas fa-percent"></i> Diskon Personal:
+                                    </span>
+                                    <span class="text-success">- Rp {{ number_format($totalDiscount, 0, ',', '.') }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Setelah Diskon:</span>
+                                    <span>Rp {{ number_format($total, 0, ',', '.') }}</span>
+                                </div>
+                            @else
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Subtotal:</span>
+                                    <span>Rp {{ number_format($total, 0, ',', '.') }}</span>
+                                </div>
+                            @endif
+                            <div class="d-flex justify-content-between mb-2">
                                 <span>Ongkos Kirim:</span>
                                 <span class="text-success">Gratis</span>
                             </div>
@@ -188,6 +254,14 @@
                                 <h6 class="fw-bold">Total:</h6>
                                 <h6 class="fw-bold text-success">Rp {{ number_format($total, 0, ',', '.') }}</h6>
                             </div>
+                            @if($totalDiscount > 0)
+                                <div class="alert alert-success py-2 mt-2" role="alert">
+                                    <small>
+                                        <i class="fas fa-check-circle"></i> 
+                                        Anda hemat <strong>Rp {{ number_format($totalDiscount, 0, ',', '.') }}</strong>!
+                                    </small>
+                                </div>
+                            @endif
                         </div>
                         
                         <!-- Payment Proof Upload -->

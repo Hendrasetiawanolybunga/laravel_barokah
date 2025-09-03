@@ -1,4 +1,4 @@
-<footer class="bg-primary text-white py-5 mt-5">
+<footer class="text-white py-5 mt-5" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%); position: relative; overflow: hidden;">
     <div class="container">
         <div class="row">
             <div class="col-md-4 mb-4">
@@ -70,7 +70,39 @@
     }
     
     .bg-primary {
-        background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)) !important;
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%) !important;
+    }
+    
+    /* Modern footer styling */
+    footer::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, 
+            rgba(76, 175, 80, 0.1) 0%, 
+            rgba(69, 160, 73, 0.1) 25%, 
+            transparent 50%, 
+            rgba(76, 175, 80, 0.05) 75%, 
+            rgba(69, 160, 73, 0.1) 100%);
+        z-index: 1;
+    }
+    
+    footer .container {
+        position: relative;
+        z-index: 2;
+    }
+    
+    footer h5, footer h6 {
+        color: #ffffff;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    }
+    
+    footer .text-warning {
+        color: #ffc107 !important;
+        filter: drop-shadow(0 0 3px rgba(255, 193, 7, 0.4));
     }
     
     /* Footer responsive design */

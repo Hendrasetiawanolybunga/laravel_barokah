@@ -41,6 +41,14 @@ class Product extends Model
     }
 
     /**
+     * Get the personal discounts for the product.
+     */
+    public function personalDiscounts()
+    {
+        return $this->hasMany(PersonalDiscount::class);
+    }
+
+    /**
      * Check if product is available in stock
      */
     public function isAvailable(): bool

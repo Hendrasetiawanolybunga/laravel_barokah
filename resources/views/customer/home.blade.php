@@ -19,9 +19,14 @@
                             </p>
                         </div>
                         <div class="text-end">
-                            @if($user->is_loyal)
-                                <span class="badge bg-warning text-dark fs-6">
+                            @if($isLoyalCustomer)
+                                <span class="badge bg-warning text-dark fs-6 me-2">
                                     <i class="fas fa-star"></i> Member Loyal
+                                </span>
+                            @endif
+                            @if($isBirthday)
+                                <span class="badge bg-success fs-6">
+                                    <i class="fas fa-birthday-cake"></i> Selamat Ulang Tahun!
                                 </span>
                             @endif
                         </div>
@@ -41,6 +46,100 @@
                     </h5>
                     <p class="mb-0">{{ $user->message }}</p>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Birthday Notification -->
+    @if($isBirthday)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <h5 class="alert-heading">
+                        <i class="fas fa-birthday-cake"></i> Selamat Ulang Tahun!
+                    </h5>
+                    <p class="mb-0">
+                        Selamat ulang tahun, {{ $user->name }}! 🎉 
+                        Terima kasih telah menjadi bagian dari keluarga UD. Barokah Jaya Beton.
+                        @if($activeDiscounts->count() > 0)
+                            Kami telah menyiapkan diskon spesial untuk Anda!
+                        @endif
+                    </p>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Personal Discounts Notification -->
+    @if($activeDiscounts->count() > 0)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <h5 class="alert-heading">
+                        <i class="fas fa-percent"></i> Diskon Khusus Untuk Anda!
+                    </h5>
+                    <p class="mb-2">
+                        Anda memiliki {{ $activeDiscounts->count() }} diskon personal yang dapat digunakan:
+                    </p>
+                    <ul class="mb-0 ps-3">
+                        @foreach($activeDiscounts as $discount)
+                            <li>
+                                <strong>{{ $discount->product->nama }}</strong> - 
+                                Diskon {{ $discount->persen_diskon }}%
+                                @if($discount->expires_at)
+                                    (Berlaku hingga {{ $discount->expires_at->format('d M Y') }})
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                    <hr>
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> 
+                        Diskon akan otomatis diterapkan saat Anda menambahkan produk ke keranjang.
+                    </small>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Loyalty Progress Notification -->
+    @if(!$isLoyalCustomer && $totalSpending > 0)
+        @php
+            $loyaltyThreshold = 5000000;
+            $progressPercent = min(($totalSpending / $loyaltyThreshold) * 100, 100);
+            $remainingAmount = max($loyaltyThreshold - $totalSpending, 0);
+        @endphp
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-light border-primary" role="alert">
+                    <h6 class="alert-heading text-primary">
+                        <i class="fas fa-trophy"></i> Status Member Loyal
+                    </h6>
+                    <div class="mb-2">
+                        <small class="text-muted">Total Pembelian: Rp {{ number_format($totalSpending, 0, ',', '.') }}</small>
+                    </div>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-primary" 
+                             role="progressbar" 
+                             style="width: {{ $progressPercent }}%" 
+                             aria-valuenow="{{ $progressPercent }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        @if($remainingAmount > 0)
+                            <i class="fas fa-info-circle"></i> 
+                            Belanja lagi Rp {{ number_format($remainingAmount, 0, ',', '.') }} untuk menjadi Member Loyal 
+                            dan dapatkan keuntungan eksklusif!
+                        @else
+                            <i class="fas fa-check-circle text-success"></i> 
+                            Selamat! Anda telah mencapai status Member Loyal!
+                        @endif
+                    </small>
                 </div>
             </div>
         </div>
@@ -67,11 +166,11 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card text-center border-info">
+            <div class="card text-center border-warning">
                 <div class="card-body">
-                    <i class="fas fa-heart fa-2x text-info mb-2"></i>
-                    <h5 class="card-title">Terpercaya</h5>
-                    <p class="card-text text-muted">Sejak 2024</p>
+                    <i class="fas fa-percent fa-2x text-warning mb-2"></i>
+                    <h5 class="card-title">{{ $activeDiscounts->count() }}</h5>
+                    <p class="card-text text-muted">Diskon Aktif</p>
                 </div>
             </div>
         </div>
