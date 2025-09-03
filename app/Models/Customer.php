@@ -65,7 +65,8 @@ class Customer extends Model
 
     /**
      * Get formatted birthday date
-     *
+     */
+    
     public function getBirthdayFormattedAttribute(): string
     {
         return $this->tgl_lahir ? $this->tgl_lahir->format('d M') : '-';
