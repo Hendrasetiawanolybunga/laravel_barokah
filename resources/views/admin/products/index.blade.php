@@ -103,7 +103,7 @@
                                             </td>
                                             <td>
                                                 <small class="text-muted">
-                                                    {{ $product->created_at->format('d/m/Y') }}
+                                                    {{ $product->created_at->setTimezone('Asia/Jakarta')->translatedFormat('d F Y') }}
                                                 </small>
                                             </td>
                                             <td>

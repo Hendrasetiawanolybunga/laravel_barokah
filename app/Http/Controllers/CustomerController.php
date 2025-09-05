@@ -30,10 +30,10 @@ class CustomerController extends Controller
             ->with('product:id,nama,harga')
             ->get();
         
-        // Check if today is user's birthday using customer relationship
+        // Check if today is user's birthday using customer relationship dengan timezone Indonesia
         $isBirthday = $user->customer && 
                      $user->customer->tgl_lahir && 
-                     $user->customer->tgl_lahir->format('m-d') === now()->format('m-d');
+                     $user->customer->tgl_lahir->format('m-d') === now()->setTimezone('Asia/Jakarta')->format('m-d');
         
         // Get user's spending for loyalty status
         $totalSpending = $user->orders()
@@ -42,10 +42,46 @@ class CustomerController extends Controller
         
         $isLoyalCustomer = $totalSpending > 5000000; // 5M threshold for loyal customer
 
+        // Cek apakah ada diskon baru yang belum ditampilkan sebagai alert
+        $this->checkAndSetNewDiscountAlert($activeDiscounts);
+
         return view('customer.home', compact(
             'user', 'products', 'cartCount', 'activeDiscounts', 
             'isBirthday', 'totalSpending', 'isLoyalCustomer'
         ));
+    }
+
+    /**
+     * Cek dan set alert untuk diskon baru (hanya sekali per sesi)
+     */
+    private function checkAndSetNewDiscountAlert($activeDiscounts)
+    {
+        // Ambil ID diskon yang sudah pernah ditampilkan dari sesi
+        $shownDiscountIds = session()->get('shown_discount_alerts', []);
+        
+        $newDiscounts = [];
+        
+        foreach ($activeDiscounts as $discount) {
+            // Jika diskon belum pernah ditampilkan sebagai alert
+            if (!in_array($discount->id, $shownDiscountIds)) {
+                $newDiscounts[] = $discount;
+                
+                // Tandai diskon ini sudah ditampilkan
+                $shownDiscountIds[] = $discount->id;
+            }
+        }
+        
+        // Jika ada diskon baru, tampilkan alert
+        if (count($newDiscounts) > 0) {
+            $alertMessage = count($newDiscounts) === 1 
+                ? "Anda mendapat diskon baru {$newDiscounts[0]->persen_diskon}% untuk {$newDiscounts[0]->product->nama}!"
+                : "Anda mendapat " . count($newDiscounts) . " diskon baru! Cek halaman notifikasi untuk detail.";
+            
+            session()->flash('new_discount_alert', $alertMessage);
+        }
+        
+        // Update sesi dengan ID diskon yang sudah ditampilkan
+        session()->put('shown_discount_alerts', $shownDiscountIds);
     }
 
     // ============ NOTIFICATION FUNCTIONALITY ============
@@ -108,6 +144,90 @@ class CustomerController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get notifications data for modal (AJAX)
+     */
+    public function getNotificationsData(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            
+            // Get user's active personal discounts dengan timezone Indonesia
+            $activeDiscounts = PersonalDiscount::where('user_id', $user->id)
+                ->active()
+                ->with('product:id,nama,harga')
+                ->get()
+                ->map(function ($discount) {
+                    return [
+                        'id' => $discount->id,
+                        'type' => 'discount',
+                        'title' => "Diskon {$discount->persen_diskon}% - {$discount->product->nama}",
+                        'message' => $discount->admin_note ?: "Diskon {$discount->persen_diskon}% berlaku untuk produk {$discount->product->nama}",
+                        'created_at' => $discount->created_at->setTimezone('Asia/Jakarta')->translatedFormat('d M Y H:i') . ' WIB',
+                        'expires_at' => $discount->expires_at ? $discount->expires_at->setTimezone('Asia/Jakarta')->translatedFormat('d M Y H:i') . ' WIB' : null,
+                        'is_active' => $discount->isValid(),
+                        'icon' => 'fas fa-percent',
+                        'color' => 'success'
+                    ];
+                });
+            
+            $notifications = [];
+            
+            // Add admin message as notification if exists
+            if ($user->message && !$user->message_read_at) {
+                $notifications[] = [
+                    'id' => 'admin_message',
+                    'type' => 'message',
+                    'title' => 'Pesan dari Admin',
+                    'message' => $user->message,
+                    'created_at' => $user->updated_at->setTimezone('Asia/Jakarta')->translatedFormat('d M Y H:i') . ' WIB',
+                    'expires_at' => null,
+                    'is_active' => true,
+                    'icon' => 'fas fa-bullhorn',
+                    'color' => 'info'
+                ];
+            }
+            
+            // Add birthday notification if applicable
+            $isBirthday = $user->customer && 
+                         $user->customer->tgl_lahir && 
+                         $user->customer->tgl_lahir->format('m-d') === now()->setTimezone('Asia/Jakarta')->format('m-d');
+            
+            if ($isBirthday) {
+                $notifications[] = [
+                    'id' => 'birthday',
+                    'type' => 'birthday',
+                    'title' => 'Selamat Ulang Tahun! 🎉',
+                    'message' => "Selamat ulang tahun, {$user->name}! Terima kasih telah menjadi bagian dari keluarga UD. Barokah Jaya Beton.",
+                    'created_at' => now()->setTimezone('Asia/Jakarta')->translatedFormat('d M Y'),
+                    'expires_at' => null,
+                    'is_active' => true,
+                    'icon' => 'fas fa-birthday-cake',
+                    'color' => 'warning'
+                ];
+            }
+            
+            // Merge and sort notifications
+            $allNotifications = collect($notifications)->concat($activeDiscounts)
+                ->sortByDesc('created_at')
+                ->values()
+                ->all();
+            
+            return response()->json([
+                'success' => true,
+                'notifications' => $allNotifications,
+                'total_count' => count($allNotifications),
+                'unread_count' => count($notifications) + $activeDiscounts->count()
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memuat notifikasi'
             ], 500);
         }
     }
@@ -568,9 +688,9 @@ class CustomerController extends Controller
             // Upload payment proof
             $buktiPath = $request->file('bukti_bayar')->store('payment-proofs', 'public');
 
-            // Create order with discounted total
+            // Create order with discounted total menggunakan timezone Indonesia
             $order = Order::create([
-                'tanggal' => Carbon::now(),
+                'tanggal' => Carbon::now()->setTimezone('Asia/Jakarta'),
                 'total' => $total,
                 'bukti_bayar' => $buktiPath,
                 'status' => 'pending',

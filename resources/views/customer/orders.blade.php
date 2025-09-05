@@ -25,7 +25,7 @@
                                                 <i class="fas fa-shopping-bag text-success me-2"></i>
                                                 Pesanan #{{ $order->id }}
                                             </h5>
-                                            <small class="text-muted">{{ $order->created_at->format('d M Y, H:i') }}</small>
+                                            <small class="text-muted">{{ $order->created_at->setTimezone('Asia/Jakarta')->translatedFormat('d F Y, H:i') }} WIB</small>
                                         </div>
                                         <div class="col-md-6 text-md-end">
                                             <span class="badge 

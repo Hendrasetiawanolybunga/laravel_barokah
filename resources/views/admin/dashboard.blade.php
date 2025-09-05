@@ -16,7 +16,7 @@
                 </div>
                 <div class="text-end">
                     <small class="text-muted">
-                        <i class="fas fa-calendar"></i> {{ now()->format('d F Y, H:i') }}
+                        <i class="fas fa-calendar"></i> {{ now()->setTimezone('Asia/Jakarta')->translatedFormat('d F Y, H:i') }} WIB
                     </small>
                 </div>
             </div>
@@ -205,7 +205,7 @@
                                                 </div>
                                             </td>
                                             <td>
-                                                <small>{{ $order->tanggal->format('d/m/Y H:i') }}</small>
+                                                <small>{{ $order->tanggal->setTimezone('Asia/Jakarta')->translatedFormat('d F Y, H:i') }} WIB</small>
                                             </td>
                                             <td>
                                                 <span class="fw-bold text-success">

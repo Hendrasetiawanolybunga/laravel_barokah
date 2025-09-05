@@ -38,7 +38,7 @@ class CrmController extends Controller
         $birthdayCustomers = User::where('role', 'customer')
             ->whereHas('customer', function ($customerQuery) {
                 $customerQuery->whereNotNull('tgl_lahir')
-                             ->whereRaw("strftime('%m', tgl_lahir) = ?", [Carbon::now()->format('m')]);
+                             ->whereRaw("strftime('%m', tgl_lahir) = ?", [now()->setTimezone('Asia/Jakarta')->format('m')]);
             })
             ->with(['customer', 'orders' => function ($query) {
                 $query->where('status', 'shipped');
@@ -46,8 +46,8 @@ class CrmController extends Controller
             ->get()
             ->map(function ($user) {
                 $user->total_spending = $user->orders->sum('total');
-                $user->birthday_date = $user->customer && $user->customer->tgl_lahir ? $user->customer->tgl_lahir->format('d M') : '-';
-                $user->is_birthday_today = $user->customer && $user->customer->tgl_lahir && $user->customer->tgl_lahir->format('m-d') === now()->format('m-d');
+                $user->birthday_date = $user->customer && $user->customer->tgl_lahir ? $user->customer->tgl_lahir->translatedFormat('d M') : '-';
+                $user->is_birthday_today = $user->customer && $user->customer->tgl_lahir && $user->customer->tgl_lahir->format('m-d') === now()->setTimezone('Asia/Jakarta')->format('m-d');
                 return $user;
             });
 
@@ -55,7 +55,7 @@ class CrmController extends Controller
         $loyalWithBirthday = User::where('role', 'customer')
             ->whereHas('customer', function ($customerQuery) {
                 $customerQuery->whereNotNull('tgl_lahir')
-                             ->whereRaw("strftime('%m', tgl_lahir) = ?", [Carbon::now()->format('m')]);
+                             ->whereRaw("strftime('%m', tgl_lahir) = ?", [now()->setTimezone('Asia/Jakarta')->format('m')]);
             })
             ->whereHas('orders', function ($query) {
                 $query->where('status', 'shipped')
@@ -69,8 +69,8 @@ class CrmController extends Controller
             ->get()
             ->map(function ($user) {
                 $user->total_spending = $user->orders->sum('total');
-                $user->birthday_date = $user->customer && $user->customer->tgl_lahir ? $user->customer->tgl_lahir->format('d M') : '-';
-                $user->is_birthday_today = $user->customer && $user->customer->tgl_lahir && $user->customer->tgl_lahir->format('m-d') === now()->format('m-d');
+                $user->birthday_date = $user->customer && $user->customer->tgl_lahir ? $user->customer->tgl_lahir->translatedFormat('d M') : '-';
+                $user->is_birthday_today = $user->customer && $user->customer->tgl_lahir && $user->customer->tgl_lahir->format('m-d') === now()->setTimezone('Asia/Jakarta')->format('m-d');
                 return $user;
             });
 
@@ -187,10 +187,10 @@ class CrmController extends Controller
                 return back()->withErrors(['error' => 'Produk tidak ditemukan.']);
             }
             
-            // Set default expiration to 2 days if not provided
+            // Set default expiration to 2 days if not provided dengan timezone Indonesia
             $expiresAt = $request->expires_at ? 
-                        Carbon::parse($request->expires_at) : 
-                        Carbon::now()->addDays(2);
+                        Carbon::parse($request->expires_at)->setTimezone('Asia/Jakarta') : 
+                        Carbon::now()->setTimezone('Asia/Jakarta')->addDays(2);
             
             Log::info('CRM setDiscount: Creating/updating discount', [
                 'user_id' => $user->id,
@@ -299,21 +299,21 @@ class CrmController extends Controller
     }
 
     /**
-     * Generate automated discount message
+     * Generate automated discount message dengan format waktu Indonesia
      */
     private function generateDiscountMessage(User $user, Product $product, $discountPercent, Carbon $expiresAt): string
     {
-        $expireDateFormatted = $expiresAt->format('d/m/Y');
-        $expireTimeFormatted = $expiresAt->format('H:i');
+        $expireDateFormatted = $expiresAt->setTimezone('Asia/Jakarta')->translatedFormat('d F Y');
+        $expireTimeFormatted = $expiresAt->setTimezone('Asia/Jakarta')->format('H:i');
         
         $messages = [
-            "🎉 Selamat {$user->name}! Anda mendapat diskon khusus {$discountPercent}% untuk produk {$product->nama}. Diskon berlaku hingga {$expireDateFormatted} pukul {$expireTimeFormatted}. Jangan sampai terlewat!",
+            "🎉 Selamat {$user->name}! Anda mendapat diskon khusus {$discountPercent}% untuk produk {$product->nama}. Diskon berlaku hingga {$expireDateFormatted} pukul {$expireTimeFormatted} WIB. Jangan sampai terlewat!",
             
-            "⭐ Halo {$user->name}, ada kabar baik untuk Anda! Diskon spesial {$discountPercent}% untuk {$product->nama} telah kami berikan. Berlaku sampai {$expireDateFormatted} {$expireTimeFormatted}.",
+            "⭐ Halo {$user->name}, ada kabar baik untuk Anda! Diskon spesial {$discountPercent}% untuk {$product->nama} telah kami berikan. Berlaku sampai {$expireDateFormatted} {$expireTimeFormatted} WIB.",
             
-            "🛒 {$user->name}, dapatkan {$product->nama} dengan diskon {$discountPercent}%! Penawaran terbatas sampai {$expireDateFormatted} pukul {$expireTimeFormatted}. Segera manfaatkan kesempatan ini!",
+            "🛒 {$user->name}, dapatkan {$product->nama} dengan diskon {$discountPercent}%! Penawaran terbatas sampai {$expireDateFormatted} pukul {$expireTimeFormatted} WIB. Segera manfaatkan kesempatan ini!",
             
-            "💎 Pelanggan terhormat {$user->name}, kami memberikan diskon eksklusif {$discountPercent}% untuk {$product->nama}. Masa berlaku: hingga {$expireDateFormatted} {$expireTimeFormatted}."
+            "💎 Pelanggan terhormat {$user->name}, kami memberikan diskon eksklusif {$discountPercent}% untuk {$product->nama}. Masa berlaku: hingga {$expireDateFormatted} {$expireTimeFormatted} WIB."
         ];
         
         // Return random message or first one for consistency
@@ -352,8 +352,8 @@ class CrmController extends Controller
             $product = Product::findOrFail($request->product_id);
             
             $expiresAt = $request->expires_at ? 
-                        Carbon::parse($request->expires_at) : 
-                        Carbon::now()->addDays(2);
+                        Carbon::parse($request->expires_at)->setTimezone('Asia/Jakarta') : 
+                        Carbon::now()->setTimezone('Asia/Jakarta')->addDays(2);
             
             $message = $this->generateDiscountMessage($user, $product, $request->persen_diskon, $expiresAt);
             

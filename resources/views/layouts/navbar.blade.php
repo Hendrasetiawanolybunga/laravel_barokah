@@ -133,7 +133,7 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link position-relative {{ request()->routeIs('customer.notifications*') ? 'active' : '' }}" 
-                       href="{{ route('customer.notifications') }}">
+                       href="#" data-bs-toggle="modal" data-bs-target="#notificationsModal">
                         <i class="fas fa-bell fa-lg"></i>
                         @if(auth()->user())
                             <span class="notification-dot"></span>

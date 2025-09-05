@@ -93,9 +93,10 @@ Route::middleware(['auth', 'customer'])->prefix('customer')->name('customer.')->
     Route::get('/home', [CustomerController::class, 'home'])->name('home');
     
     // Notifications
-    Route::get('/notifications', [CustomerController::class, 'notifications'])->name('notifications');
-    Route::post('/notifications/mark-read', [CustomerController::class, 'markNotificationRead'])->name('notifications.markRead');
-    Route::post('/notifications/mark-all-read', [CustomerController::class, 'markAllNotificationsRead'])->name('notifications.markAllRead');
+    Route::get('/notifications', [CustomerController::class, 'notifications'])->name('customer.notifications.index');
+    Route::post('/notifications/mark-read', [CustomerController::class, 'markNotificationRead'])->name('customer.notifications.mark-read');
+    Route::post('/notifications/mark-all-read', [CustomerController::class, 'markAllNotificationsRead'])->name('customer.notifications.mark-all-read');
+    Route::get('/notifications/data', [CustomerController::class, 'getNotificationsData'])->name('customer.notifications.data');
     
     // Profile Editing
     Route::get('/profile/edit', [CustomerController::class, 'editProfile'])->name('profile.edit');

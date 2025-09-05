@@ -122,7 +122,7 @@
                                                 </div>
                                             </td>
                                             <td>
-                                                <small>{{ $order->tanggal->format('d/m/Y') }}</small>
+                                                <small>{{ $order->tanggal->setTimezone('Asia/Jakarta')->translatedFormat('d F Y') }}</small>
                                                 <br>
                                                 <small class="text-muted">{{ $order->tanggal->format('H:i') }}</small>
                                             </td>

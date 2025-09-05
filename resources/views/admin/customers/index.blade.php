@@ -90,7 +90,7 @@
                                             </td>
                                             <td>
                                                 @if($customer->customer)
-                                                    <small>{{ $customer->customer->tgl_lahir->format('d/m/Y') }}</small>
+                                                    <small>{{ $customer->customer->tgl_lahir->translatedFormat('d F Y') }}</small>
                                                     <br>
                                                     <small class="text-muted">
                                                         ({{ $customer->customer->tgl_lahir->age }} tahun)
@@ -119,7 +119,7 @@
                                             </td>
                                             <td>
                                                 <small class="text-muted">
-                                                    {{ $customer->created_at->format('d/m/Y') }}
+                                                    {{ $customer->created_at->setTimezone('Asia/Jakarta')->translatedFormat('d F Y') }}
                                                 </small>
                                             </td>
                                             <td>

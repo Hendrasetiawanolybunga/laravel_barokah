@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Carbon\Carbon;
 
 class PersonalDiscount extends Model
 {
@@ -42,14 +43,16 @@ class PersonalDiscount extends Model
     }
 
     /**
-     * Scope to get only active discounts
+     * Scope to get only active discounts with explicit timezone handling
      */
     public function scopeActive($query)
     {
+        $currentTime = now()->setTimezone('Asia/Jakarta');
+        
         return $query->where('is_active', true)
-                    ->where(function ($q) {
+                    ->where(function ($q) use ($currentTime) {
                         $q->whereNull('expires_at')
-                          ->orWhere('expires_at', '>', now());
+                          ->orWhere('expires_at', '>', $currentTime);
                     });
     }
 
@@ -70,12 +73,23 @@ class PersonalDiscount extends Model
     }
 
     /**
-     * Check if discount is still valid
+     * Check if discount is still valid with explicit timezone handling
      */
     public function isValid(): bool
     {
-        return $this->is_active && 
-               (is_null($this->expires_at) || $this->expires_at->isFuture());
+        if (!$this->is_active) {
+            return false;
+        }
+        
+        if (is_null($this->expires_at)) {
+            return true;
+        }
+        
+        // Pastikan perbandingan waktu menggunakan timezone Indonesia
+        $currentTime = now()->setTimezone('Asia/Jakarta');
+        $expiryTime = $this->expires_at->setTimezone('Asia/Jakarta');
+        
+        return $expiryTime->isFuture();
     }
 
     /**
@@ -89,5 +103,31 @@ class PersonalDiscount extends Model
 
         $discountAmount = ($originalPrice * $this->persen_diskon) / 100;
         return max(0, $originalPrice - $discountAmount);
+    }
+
+    /**
+     * Get formatted expiry date in Indonesian format
+     */
+    public function getFormattedExpiryAttribute(): ?string
+    {
+        if (!$this->expires_at) {
+            return null;
+        }
+        
+        return $this->expires_at->setTimezone('Asia/Jakarta')
+                                ->translatedFormat('d F Y, H:i') . ' WIB';
+    }
+
+    /**
+     * Get formatted expiry date in short Indonesian format
+     */
+    public function getFormattedExpiryShortAttribute(): ?string
+    {
+        if (!$this->expires_at) {
+            return null;
+        }
+        
+        return $this->expires_at->setTimezone('Asia/Jakarta')
+                                ->translatedFormat('d M Y');
     }
 }

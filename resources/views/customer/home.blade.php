@@ -4,6 +4,9 @@
 
 @section('content')
 <div class="container py-4">
+    <!-- Discount Countdown Timer (will be shown if there are expiring discounts) -->
+    @include('components.discount-countdown')
+    
     <!-- Welcome Section -->
     <div class="row mb-4">
         <div class="col-12">
@@ -72,33 +75,17 @@
         </div>
     @endif
 
-    <!-- Personal Discounts Notification -->
-    @if($activeDiscounts->count() > 0)
+    <!-- Personal Discounts Notification (Only show if there's a new discount alert in session) -->
+    @if(session('new_discount_alert'))
         <div class="row mb-4">
             <div class="col-12">
                 <div class="alert alert-warning alert-dismissible fade show" role="alert">
                     <h5 class="alert-heading">
-                        <i class="fas fa-percent"></i> Diskon Khusus Untuk Anda!
+                        <i class="fas fa-percent"></i> Diskon Baru!
                     </h5>
-                    <p class="mb-2">
-                        Anda memiliki {{ $activeDiscounts->count() }} diskon personal yang dapat digunakan:
+                    <p class="mb-0">
+                        {{ session('new_discount_alert') }}
                     </p>
-                    <ul class="mb-0 ps-3">
-                        @foreach($activeDiscounts as $discount)
-                            <li>
-                                <strong>{{ $discount->product->nama }}</strong> - 
-                                Diskon {{ $discount->persen_diskon }}%
-                                @if($discount->expires_at)
-                                    (Berlaku hingga {{ $discount->expires_at->format('d M Y') }})
-                                @endif
-                            </li>
-                        @endforeach
-                    </ul>
-                    <hr>
-                    <small class="text-muted">
-                        <i class="fas fa-info-circle"></i> 
-                        Diskon akan otomatis diterapkan saat Anda menambahkan produk ke keranjang.
-                    </small>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             </div>

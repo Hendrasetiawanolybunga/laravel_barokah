@@ -53,7 +53,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <h6 class="text-success mb-2">Detail Pesanan:</h6>
-                                    <p class="mb-1"><strong>Tanggal Pesanan:</strong> {{ $order->tanggal->format('d M Y, H:i') }}</p>
+                                    <p class="mb-1"><strong>Tanggal Pesanan:</strong> {{ $order->tanggal->setTimezone('Asia/Jakarta')->translatedFormat('d F Y, H:i') }} WIB</p>
                                     <p class="mb-1"><strong>Total Pembayaran:</strong> 
                                         <span class="text-success fw-bold">Rp {{ number_format($order->total, 0, ',', '.') }}</span>
                                     </p>

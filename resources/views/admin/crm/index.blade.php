@@ -36,7 +36,7 @@
                 <div class="card-body">
                     <h6>Ulang Tahun Bulan Ini</h6>
                     <h2>{{ $birthdayCustomers->count() }}</h2>
-                    <small>Berulang tahun {{ now()->format('F') }}</small>
+                    <small>Berulang tahun {{ now()->setTimezone('Asia/Jakarta')->translatedFormat('F') }}</small>
                 </div>
             </div>
         </div>
@@ -449,17 +449,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Set default expiration date to 2 days from now
+    // Set default expiration date to 2 days from now dengan timezone Indonesia
     function setDefaultExpirationDate() {
         const expiresAtInput = document.getElementById('expiresAt');
         if (!expiresAtInput.value) {
+            // Menggunakan timezone Indonesia (UTC+7)
             const now = new Date();
-            now.setDate(now.getDate() + 2);
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const indonesiaTime = new Date(now.getTime() + (7 * 60 * 60 * 1000)); // UTC+7
+            indonesiaTime.setDate(indonesiaTime.getDate() + 2);
+            
+            const year = indonesiaTime.getFullYear();
+            const month = String(indonesiaTime.getMonth() + 1).padStart(2, '0');
+            const day = String(indonesiaTime.getDate()).padStart(2, '0');
+            const hours = String(indonesiaTime.getHours()).padStart(2, '0');
+            const minutes = String(indonesiaTime.getMinutes()).padStart(2, '0');
             expiresAtInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
         }
     }

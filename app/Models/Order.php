@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\IndonesianDateFormat;
 
 class Order extends Model
 {
-    use HasFactory;
+    use HasFactory, IndonesianDateFormat;
 
     /**
      * The attributes that are mass assignable.
