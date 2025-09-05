@@ -135,7 +135,7 @@
                     <a class="nav-link position-relative {{ request()->routeIs('customer.notifications*') ? 'active' : '' }}" 
                        href="{{ route('customer.notifications') }}">
                         <i class="fas fa-bell fa-lg"></i>
-                        @if(auth()->user()->hasUnreadNotifications())
+                        @if(auth()->user())
                             <span class="notification-dot"></span>
                         @endif
                     </a>
