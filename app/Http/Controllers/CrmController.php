@@ -15,10 +15,12 @@ class CrmController extends Controller
     /**
      * Display CRM dashboard with customer segments
      */
-    public function index()
+    public function index(Request $request)
     {
+        $search = $request->query('search');
+        
         // Pelanggan Loyal (Total belanja > 5.000.000)
-        $loyalCustomers = User::where('role', 'customer')
+        $loyalQuery = User::where('role', 'customer')
             ->whereHas('orders', function ($query) {
                 $query->where('status', 'shipped')
                       ->selectRaw('user_id, SUM(total) as total_spending')
@@ -27,23 +29,47 @@ class CrmController extends Controller
             })
             ->with(['customer', 'orders' => function ($query) {
                 $query->where('status', 'shipped');
-            }])
-            ->get()
+            }]);
+            
+        if ($search) {
+            $loyalQuery->where(function($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('email', 'LIKE', "%{$search}%")
+                  ->orWhereHas('customer', function($cq) use ($search) {
+                      $cq->where('no_hp', 'LIKE', "%{$search}%")
+                        ->orWhere('alamat', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
+        
+        $loyalCustomers = $loyalQuery->get()
             ->map(function ($user) {
                 $user->total_spending = $user->orders->sum('total');
                 return $user;
             });
 
         // Pelanggan Ulang Tahun Bulan Ini
-        $birthdayCustomers = User::where('role', 'customer')
+        $birthdayQuery = User::where('role', 'customer')
             ->whereHas('customer', function ($customerQuery) {
                 $customerQuery->whereNotNull('tgl_lahir')
                              ->whereRaw("strftime('%m', tgl_lahir) = ?", [now()->setTimezone('Asia/Jakarta')->format('m')]);
             })
             ->with(['customer', 'orders' => function ($query) {
                 $query->where('status', 'shipped');
-            }])
-            ->get()
+            }]);
+            
+        if ($search) {
+            $birthdayQuery->where(function($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('email', 'LIKE', "%{$search}%")
+                  ->orWhereHas('customer', function($cq) use ($search) {
+                      $cq->where('no_hp', 'LIKE', "%{$search}%")
+                        ->orWhere('alamat', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
+            
+        $birthdayCustomers = $birthdayQuery->get()
             ->map(function ($user) {
                 $user->total_spending = $user->orders->sum('total');
                 $user->birthday_date = $user->customer && $user->customer->tgl_lahir ? $user->customer->tgl_lahir->translatedFormat('d M') : '-';
@@ -52,7 +78,7 @@ class CrmController extends Controller
             });
 
         // Pelanggan Loyal & Ulang Tahun
-        $loyalWithBirthday = User::where('role', 'customer')
+        $loyalWithBirthdayQuery = User::where('role', 'customer')
             ->whereHas('customer', function ($customerQuery) {
                 $customerQuery->whereNotNull('tgl_lahir')
                              ->whereRaw("strftime('%m', tgl_lahir) = ?", [now()->setTimezone('Asia/Jakarta')->format('m')]);
@@ -65,8 +91,20 @@ class CrmController extends Controller
             })
             ->with(['customer', 'orders' => function ($query) {
                 $query->where('status', 'shipped');
-            }])
-            ->get()
+            }]);
+            
+        if ($search) {
+            $loyalWithBirthdayQuery->where(function($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('email', 'LIKE', "%{$search}%")
+                  ->orWhereHas('customer', function($cq) use ($search) {
+                      $cq->where('no_hp', 'LIKE', "%{$search}%")
+                        ->orWhere('alamat', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
+            
+        $loyalWithBirthday = $loyalWithBirthdayQuery->get()
             ->map(function ($user) {
                 $user->total_spending = $user->orders->sum('total');
                 $user->birthday_date = $user->customer && $user->customer->tgl_lahir ? $user->customer->tgl_lahir->translatedFormat('d M') : '-';
@@ -75,7 +113,7 @@ class CrmController extends Controller
             });
 
         // Pelanggan Loyal DAN Ulang Tahun Hari Ini (untuk section dengan aksi)
-        $combinedCustomers = User::where('role', 'customer')
+        $combinedQuery = User::where('role', 'customer')
             ->whereHas('customer', function ($customerQuery) {
                 $customerQuery->whereNotNull('tgl_lahir')
                              ->whereRaw("strftime('%m-%d', tgl_lahir) = ?", [now()->setTimezone('Asia/Jakarta')->format('m-d')]);
@@ -88,8 +126,20 @@ class CrmController extends Controller
             })
             ->with(['customer', 'orders' => function ($query) {
                 $query->where('status', 'shipped');
-            }])
-            ->get()
+            }]);
+            
+        if ($search) {
+            $combinedQuery->where(function($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('email', 'LIKE', "%{$search}%")
+                  ->orWhereHas('customer', function($cq) use ($search) {
+                      $cq->where('no_hp', 'LIKE', "%{$search}%")
+                        ->orWhere('alamat', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
+            
+        $combinedCustomers = $combinedQuery->get()
             ->map(function ($user) {
                 $user->total_spending = $user->orders->sum('total');
                 $user->birthday_date = $user->customer && $user->customer->tgl_lahir ? $user->customer->tgl_lahir->translatedFormat('d M') : '-';

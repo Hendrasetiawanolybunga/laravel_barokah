@@ -38,9 +38,17 @@ class AdminController extends Controller
     /**
      * Show all products
      */
-    public function products()
+    public function products(Request $request)
     {
-        $products = Product::orderBy('created_at', 'desc')->paginate(5);
+        $search = $request->query('search');
+        $query = Product::query();
+
+        if ($search) {
+            $query->where('nama', 'LIKE', "%{$search}%")
+                  ->orWhere('deskripsi', 'LIKE', "%{$search}%");
+        }
+
+        $products = $query->orderBy('created_at', 'desc')->paginate(5);
         return view('admin.products.index', compact('products'));
     }
 
@@ -215,12 +223,21 @@ class AdminController extends Controller
     /**
      * Show all customers with CRM features
      */
-    public function customers()
+    public function customers(Request $request)
     {
-        $customers = User::where('role', 'customer')
-            ->with('customer')
-            ->orderBy('created_at', 'desc')
-            ->paginate(5);
+        $search = $request->query('search');
+        $query = User::where('role', 'customer')->with('customer');
+
+        if ($search) {
+            $query->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('email', 'LIKE', "%{$search}%")
+                  ->orWhereHas('customer', function($q) use ($search) {
+                      $q->where('no_hp', 'LIKE', "%{$search}%")
+                        ->orWhere('alamat', 'LIKE', "%{$search}%");
+                  });
+        }
+
+        $customers = $query->orderBy('created_at', 'desc')->paginate(5);
 
         return view('admin.customers.index', compact('customers'));
     }
@@ -565,11 +582,20 @@ class AdminController extends Controller
     /**
      * Show all orders
      */
-    public function orders()
+    public function orders(Request $request)
     {
-        $orders = Order::with(['user', 'orderItems.product'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(5);
+        $search = $request->query('search');
+        $query = Order::with(['user', 'orderItems.product']);
+
+        if ($search) {
+            $query->where('id', 'LIKE', "%{$search}%")
+                  ->orWhereHas('user', function($q) use ($search) {
+                      $q->where('name', 'LIKE', "%{$search}%")
+                        ->orWhere('email', 'LIKE', "%{$search}%");
+                  });
+        }
+
+        $orders = $query->orderBy('created_at', 'desc')->paginate(5);
 
         return view('admin.orders.index', compact('orders'));
     }

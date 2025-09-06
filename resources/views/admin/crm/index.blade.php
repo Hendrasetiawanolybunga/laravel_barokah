@@ -20,6 +20,27 @@
         </div>
     @endif
 
+    <!-- CRM Header with Search -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-users"></i> Daftar Pelanggan
+                        </h5>
+                        <form action="{{ route('admin.crm.index') }}" method="GET" class="col-md-4">
+                            <div class="input-group">
+                                <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Cari pelanggan...">
+                                <button class="btn btn-primary" type="submit">Cari</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- CRM Statistics -->
     <div class="row g-4 mb-4">
         <div class="col-lg-4">

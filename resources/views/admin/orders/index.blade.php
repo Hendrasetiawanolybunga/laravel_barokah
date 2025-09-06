@@ -81,14 +81,22 @@
         </div>
     </div>
 
-    <!-- Orders Table -->
+    <!-- Orders Table Header with Search -->
     <div class="row">
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-list"></i> Daftar Pesanan
-                    </h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list"></i> Daftar Pesanan
+                        </h5>
+                        <form action="{{ route('admin.orders') }}" method="GET" class="col-md-4">
+                            <div class="input-group">
+                                <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Cari pesanan...">
+                                <button class="btn btn-primary" type="submit">Cari</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
                 <div class="card-body">
                     @if($orders->count() > 0)
