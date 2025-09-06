@@ -63,9 +63,8 @@
                         <thead>
                             <tr>
                                 <th>Nama</th>
-                                <th>Email</th>
-                                <th>Total Belanja</th>
-                                <th>Aksi</th>
+<th>Email</th>
+<th>Total Belanja</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -74,18 +73,6 @@
                                     <td><strong>{{ $customer->name }}</strong></td>
                                     <td>{{ $customer->email }}</td>
                                     <td class="text-success">Rp {{ number_format($customer->total_spending, 0, ',', '.') }}</td>
-                                    <td>
-                                        <button class="btn btn-outline-primary btn-sm send-message-btn" 
-                                                data-customer-id="{{ $customer->id }}"
-                                                data-customer-name="{{ $customer->name }}">
-                                            <i class="fas fa-envelope"></i> Pesan
-                                        </button>
-                                        <button class="btn btn-outline-success btn-sm set-discount-btn"
-                                                data-customer-id="{{ $customer->id }}"
-                                                data-customer-name="{{ $customer->name }}">
-                                            <i class="fas fa-percent"></i> Diskon
-                                        </button>
-                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -109,9 +96,8 @@
                         <thead>
                             <tr>
                                 <th>Nama</th>
-                                <th>Email</th>
-                                <th>Tanggal Lahir</th>
-                                <th>Aksi</th>
+<th>Email</th>
+<th>Tanggal Lahir</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -125,18 +111,6 @@
                                     </td>
                                     <td>{{ $customer->email }}</td>
                                     <td>{{ $customer->birthday_date }}</td>
-                                    <td>
-                                        <button class="btn btn-outline-primary btn-sm send-message-btn"
-                                                data-customer-id="{{ $customer->id }}"
-                                                data-customer-name="{{ $customer->name }}">
-                                            <i class="fas fa-envelope"></i> Pesan
-                                        </button>
-                                        <button class="btn btn-outline-success btn-sm set-discount-btn"
-                                                data-customer-id="{{ $customer->id }}"
-                                                data-customer-name="{{ $customer->name }}">
-                                            <i class="fas fa-percent"></i> Diskon
-                                        </button>
-                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -154,20 +128,20 @@
             <h5 class="mb-0"><i class="fas fa-star"></i> Pelanggan VIP (Loyal & Ulang Tahun)</h5>
         </div>
         <div class="card-body">
-            @if($loyalWithBirthday->count() > 0)
+            @if($combinedCustomers->count() > 0)
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
                                 <th>Nama</th>
-                                <th>Email</th>
-                                <th>Total Belanja</th>
-                                <th>Status</th>
-                                <th>Aksi</th>
+<th>Email</th>
+<th>Total Belanja</th>
+<th>Status</th>
+<th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($loyalWithBirthday as $customer)
+                            @foreach($combinedCustomers as $customer)
                                 <tr class="table-info">
                                     <td>
                                         <strong>{{ $customer->name }}</strong>

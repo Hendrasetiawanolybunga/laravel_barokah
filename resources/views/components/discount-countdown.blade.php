@@ -34,6 +34,33 @@
     </div>
 </div>
 
+<style>
+.countdown-timer {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.countdown-item {
+    min-width: 60px;
+}
+
+.countdown-value {
+    background: #fff;
+    color: #ffc107;
+    border-radius: 5px;
+    padding: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.countdown-label {
+    color: #fff;
+    font-weight: 500;
+    margin-top: 5px;
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Check if we have discount expiration data
@@ -57,18 +84,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const now = new Date().getTime();
             const distance = expiryTime - now;
             
-            // Calculate days, hours, minutes and seconds
-            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-            
-            // Display the results
-            document.getElementById('days').innerHTML = days.toString().padStart(2, '0');
-            document.getElementById('hours').innerHTML = hours.toString().padStart(2, '0');
-            document.getElementById('minutes').innerHTML = minutes.toString().padStart(2, '0');
-            document.getElementById('seconds').innerHTML = seconds.toString().padStart(2, '0');
-            
             // If the countdown is finished
             if (distance < 0) {
                 clearInterval(countdownInterval);
@@ -89,7 +104,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 setTimeout(function() {
                     location.reload();
                 }, 5000);
+                return;
             }
+            
+            // Calculate days, hours, minutes and seconds
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            // Display the results with leading zeros
+            document.getElementById('days').innerHTML = days.toString().padStart(2, '0');
+            document.getElementById('hours').innerHTML = hours.toString().padStart(2, '0');
+            document.getElementById('minutes').innerHTML = minutes.toString().padStart(2, '0');
+            document.getElementById('seconds').innerHTML = seconds.toString().padStart(2, '0');
         }, 1000);
     }
 });

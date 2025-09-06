@@ -70,11 +70,25 @@
                         <i class="fas fa-shopping-cart"></i> Pesanan
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('admin.crm*') ? 'active' : '' }}" 
-                       href="{{ route('admin.crm.index') }}">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {{ request()->routeIs('admin.crm*') ? 'active' : '' }}" 
+                       href="#" role="button" data-bs-toggle="dropdown">
                         <i class="fas fa-heart"></i> CRM
                     </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('admin.crm.index') ? 'active' : '' }}" 
+                               href="{{ route('admin.crm.index') }}">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard CRM
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('admin.crm.history') ? 'active' : '' }}" 
+                               href="{{ route('admin.crm.history') }}">
+                                <i class="fas fa-history"></i> Riwayat CRM
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('admin.reports*') ? 'active' : '' }}" 

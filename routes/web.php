@@ -36,6 +36,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/customers', [AdminController::class, 'customers'])->name('customers');
     Route::post('/customers', [AdminController::class, 'storeCustomer'])->name('customers.store');
     Route::put('/customers/{user}', [AdminController::class, 'updateCustomer'])->name('customers.update');
+    Route::delete('/customers/{user}', [AdminController::class, 'deleteCustomer'])->name('customers.delete');
     Route::put('/customers/{user}/loyalty', [AdminController::class, 'updateLoyalty'])->name('customers.loyalty');
     Route::put('/customers/{user}/message', [AdminController::class, 'updateMessage'])->name('customers.message');
     
@@ -58,6 +59,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/crm/preview-message', [CrmController::class, 'previewDiscountMessage'])->name('crm.previewMessage');
     Route::get('/crm/{user}/discounts', [CrmController::class, 'getCustomerDiscounts'])->name('crm.getCustomerDiscounts');
     Route::delete('/crm/discount/{discount}', [CrmController::class, 'removeDiscount'])->name('crm.removeDiscount');
+    
+    // CRM History
+    Route::get('/crm/history', [AdminController::class, 'crmHistory'])->name('crm.history');
+    Route::post('/crm/history/delete', [AdminController::class, 'deleteCrmHistory'])->name('crm.history.delete');
+    Route::post('/crm/history/update', [AdminController::class, 'updateCrmHistory'])->name('crm.history.update');
     
     // Debug route for CRM functionality
     Route::get('/crm/debug', function() {
@@ -93,10 +99,11 @@ Route::middleware(['auth', 'customer'])->prefix('customer')->name('customer.')->
     Route::get('/home', [CustomerController::class, 'home'])->name('home');
     
     // Notifications
-    Route::get('/notifications', [CustomerController::class, 'notifications'])->name('customer.notifications.index');
-    Route::post('/notifications/mark-read', [CustomerController::class, 'markNotificationRead'])->name('customer.notifications.mark-read');
-    Route::post('/notifications/mark-all-read', [CustomerController::class, 'markAllNotificationsRead'])->name('customer.notifications.mark-all-read');
-    Route::get('/notifications/data', [CustomerController::class, 'getNotificationsData'])->name('customer.notifications.data');
+    Route::get('/notifications', [CustomerController::class, 'notifications'])->name('notifications.index');
+    Route::post('/notifications/mark-read', [CustomerController::class, 'markNotificationRead'])->name('notifications.mark-read');
+    Route::post('/notifications/mark-all-read', [CustomerController::class, 'markAllNotificationsRead'])->name('notifications.mark-all-read');
+    Route::post('/notifications/delete', [CustomerController::class, 'deleteNotification'])->name('notifications.delete');
+    Route::get('/notifications/data', [CustomerController::class, 'getNotificationsData'])->name('notifications.data');
     
     // Profile Editing
     Route::get('/profile/edit', [CustomerController::class, 'editProfile'])->name('profile.edit');

@@ -62,7 +62,7 @@
                                         <th width="150">Kontak</th>
                                         <th width="100">Status</th>
                                         <th width="120">Bergabung</th>
-                                        <th width="200">Aksi CRM</th>
+                                        <th width="150">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -89,7 +89,7 @@
                                                 </div>
                                             </td>
                                             <td>
-                                                @if($customer->customer)
+                                                @if($customer->customer && $customer->customer->tgl_lahir)
                                                     <small>{{ $customer->customer->tgl_lahir->translatedFormat('d F Y') }}</small>
                                                     <br>
                                                     <small class="text-muted">
@@ -123,30 +123,21 @@
                                                 </small>
                                             </td>
                                             <td>
-                                                <div class="btn-group-vertical w-100" role="group">
+                                                <div class="btn-group" role="group">
                                                     <!-- Edit Customer -->
                                                     <button type="button" 
-                                                            class="btn btn-sm btn-outline-success mb-1"
+                                                            class="btn btn-sm btn-outline-primary"
                                                             onclick="openEditCustomerModal({{ $customer->id }})"
                                                             title="Edit Data Pelanggan">
-                                                        <i class="fas fa-edit"></i> Edit
+                                                        <i class="fas fa-edit"></i>
                                                     </button>
                                                     
-                                                    <!-- Loyalty Toggle -->
+                                                    <!-- Delete Customer -->
                                                     <button type="button" 
-                                                            class="btn btn-sm {{ $customer->is_loyal ? 'btn-warning' : 'btn-outline-warning' }} mb-1"
-                                                            onclick="toggleLoyalty({{ $customer->id }}, {{ $customer->is_loyal ? 'false' : 'true' }})"
-                                                            title="{{ $customer->is_loyal ? 'Hapus Status Loyal' : 'Jadikan Member Loyal' }}">
-                                                        <i class="fas fa-star"></i> 
-                                                        {{ $customer->is_loyal ? 'Hapus Loyal' : 'Set Loyal' }}
-                                                    </button>
-                                                    
-                                                    <!-- Message Management -->
-                                                    <button type="button" 
-                                                            class="btn btn-sm btn-outline-primary"
-                                                            onclick="openMessageModal({{ $customer->id }}, '{{ $customer->name }}', '{{ addslashes($customer->message ?? '') }}')"
-                                                            title="Kirim/Edit Pesan">
-                                                        <i class="fas fa-envelope"></i> Pesan
+                                                            class="btn btn-sm btn-outline-danger"
+                                                            onclick="deleteCustomer({{ $customer->id }}, '{{ $customer->name }}')"
+                                                            title="Hapus Pelanggan">
+                                                        <i class="fas fa-trash"></i>
                                                     </button>
                                                 </div>
                                             </td>
@@ -158,7 +149,9 @@
                         
                         <!-- Pagination -->
                         <div class="d-flex justify-content-center mt-4">
-                            {{ $customers->links() }}
+                            <nav aria-label="Navigasi halaman pelanggan">
+                                {{ $customers->links('vendor.pagination.bootstrap-5') }}
+                            </nav>
                         </div>
                     @else
                         <div class="text-center py-5">
@@ -321,6 +314,7 @@
             <form id="editCustomerForm">
                 @csrf
                 @method('PUT')
+                <input type="hidden" id="edit_customer_id" name="customer_id">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6">
@@ -398,10 +392,39 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteCustomerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> Konfirmasi Hapus
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin menghapus pelanggan <strong id="deleteCustomerName"></strong>?</p>
+                <p class="text-danger">Tindakan ini tidak dapat dibatalkan dan akan menghapus semua data pelanggan.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Batal
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Hapus
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
 <script>
+    // Current customer ID for delete operation
+    let currentCustomerId = null;
+    
     function toggleLoyalty(userId, newStatus) {
         showLoading();
         
@@ -452,9 +475,12 @@
                 
                 const customer = response.customers.find(c => c.id === userId);
                 if (customer) {
+                    // Set basic user info
+                    document.getElementById('edit_customer_id').value = customer.id;
                     document.getElementById('edit_name').value = customer.name;
                     document.getElementById('edit_email').value = customer.email;
                     
+                    // Set customer profile info
                     if (customer.customer) {
                         document.getElementById('edit_no_hp').value = customer.customer.no_hp || '';
                         document.getElementById('edit_tgl_lahir').value = customer.customer.tgl_lahir || '';
@@ -462,9 +488,16 @@
                         document.getElementById('edit_alamat').value = customer.customer.alamat || '';
                     }
                     
-                    document.getElementById('edit_created_at').value = new Date(customer.created_at).toLocaleDateString('id-ID');
+                    // Set created at info
+                    if (customer.created_at) {
+                        const createdAt = new Date(customer.created_at);
+                        document.getElementById('edit_created_at').value = createdAt.toLocaleDateString('id-ID');
+                    }
+                    
+                    // Set form action
                     document.getElementById('editCustomerForm').action = `/admin/customers/${userId}`;
                     
+                    // Show modal
                     const modal = new bootstrap.Modal(document.getElementById('editCustomerModal'));
                     modal.show();
                 }
@@ -475,6 +508,47 @@
             }
         });
     }
+    
+    function deleteCustomer(customerId, customerName) {
+        currentCustomerId = customerId;
+        document.getElementById('deleteCustomerName').textContent = customerName;
+        
+        const modal = new bootstrap.Modal(document.getElementById('deleteCustomerModal'));
+        modal.show();
+    }
+    
+    // Confirm delete
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+        if (!currentCustomerId) return;
+        
+        showLoading();
+        
+        $.ajax({
+            url: `/admin/customers/${currentCustomerId}`,
+            method: 'DELETE',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                _method: 'DELETE'
+            },
+            success: function(response) {
+                hideLoading();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('deleteCustomerModal'));
+                modal.hide();
+                
+                if (response.success) {
+                    location.reload();
+                } else {
+                    alert(response.message || 'Terjadi kesalahan saat menghapus customer.');
+                }
+            },
+            error: function(xhr, status, error) {
+                hideLoading();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('deleteCustomerModal'));
+                modal.hide();
+                alert('Terjadi kesalahan saat menghapus customer.');
+            }
+        });
+    });
     
     function showLoading() {
         const modal = new bootstrap.Modal(document.getElementById('loadingModal'));

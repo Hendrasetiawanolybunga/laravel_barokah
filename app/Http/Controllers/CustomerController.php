@@ -149,6 +149,61 @@ class CustomerController extends Controller
     }
 
     /**
+     * Delete a notification (AJAX)
+     */
+    public function deleteNotification(Request $request)
+    {
+        $user = auth()->user();
+        
+        try {
+            $validator = Validator::make($request->all(), [
+                'id' => 'required|integer',
+                'type' => 'required|string|in:discount,message',
+            ]);
+            
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data tidak valid'
+                ], 422);
+            }
+            
+            if ($request->type === 'discount') {
+                // Delete personal discount
+                $discount = PersonalDiscount::where('id', $request->id)
+                    ->where('user_id', $user->id)
+                    ->first();
+                
+                if ($discount) {
+                    $discount->delete();
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Notifikasi diskon berhasil dihapus'
+                    ]);
+                }
+            } elseif ($request->type === 'message') {
+                // Clear admin message
+                $user->update(['message' => null]);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pesan admin berhasil dihapus'
+                ]);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Notifikasi tidak ditemukan'
+            ], 404);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menghapus notifikasi'
+            ], 500);
+        }
+    }
+
+    /**
      * Get notifications data for modal (AJAX)
      */
     public function getNotificationsData(Request $request)
@@ -156,12 +211,12 @@ class CustomerController extends Controller
         try {
             $user = auth()->user();
             
-            // Get user's active personal discounts dengan timezone Indonesia
-            $activeDiscounts = PersonalDiscount::where('user_id', $user->id)
-                ->active()
+            // Get user's personal discounts with timezone Indonesia
+            $discounts = PersonalDiscount::where('user_id', $user->id)
                 ->with('product:id,nama,harga')
                 ->get()
                 ->map(function ($discount) {
+                    $isValid = $discount->isValid();
                     return [
                         'id' => $discount->id,
                         'type' => 'discount',
@@ -169,16 +224,16 @@ class CustomerController extends Controller
                         'message' => $discount->admin_note ?: "Diskon {$discount->persen_diskon}% berlaku untuk produk {$discount->product->nama}",
                         'created_at' => $discount->created_at->setTimezone('Asia/Jakarta')->translatedFormat('d M Y H:i') . ' WIB',
                         'expires_at' => $discount->expires_at ? $discount->expires_at->setTimezone('Asia/Jakarta')->translatedFormat('d M Y H:i') . ' WIB' : null,
-                        'is_active' => $discount->isValid(),
+                        'is_active' => $isValid,
                         'icon' => 'fas fa-percent',
-                        'color' => 'success'
+                        'color' => $isValid ? 'success' : 'danger'
                     ];
                 });
             
             $notifications = [];
             
             // Add admin message as notification if exists
-            if ($user->message && !$user->message_read_at) {
+            if ($user->message) {
                 $notifications[] = [
                     'id' => 'admin_message',
                     'type' => 'message',
@@ -212,7 +267,7 @@ class CustomerController extends Controller
             }
             
             // Merge and sort notifications
-            $allNotifications = collect($notifications)->concat($activeDiscounts)
+            $allNotifications = collect($notifications)->concat($discounts)
                 ->sortByDesc('created_at')
                 ->values()
                 ->all();
@@ -221,7 +276,7 @@ class CustomerController extends Controller
                 'success' => true,
                 'notifications' => $allNotifications,
                 'total_count' => count($allNotifications),
-                'unread_count' => count($notifications) + $activeDiscounts->count()
+                'unread_count' => count($notifications) + $discounts->count()
             ]);
             
         } catch (\Exception $e) {

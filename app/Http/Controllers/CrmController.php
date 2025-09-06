@@ -74,7 +74,30 @@ class CrmController extends Controller
                 return $user;
             });
 
-        return view('admin.crm.index', compact('loyalCustomers', 'birthdayCustomers', 'loyalWithBirthday'));
+        // Pelanggan Loyal DAN Ulang Tahun Hari Ini (untuk section dengan aksi)
+        $combinedCustomers = User::where('role', 'customer')
+            ->whereHas('customer', function ($customerQuery) {
+                $customerQuery->whereNotNull('tgl_lahir')
+                             ->whereRaw("strftime('%m-%d', tgl_lahir) = ?", [now()->setTimezone('Asia/Jakarta')->format('m-d')]);
+            })
+            ->whereHas('orders', function ($query) {
+                $query->where('status', 'shipped')
+                      ->selectRaw('user_id, SUM(total) as total_spending')
+                      ->groupBy('user_id')
+                      ->havingRaw('SUM(total) > 4000000');
+            })
+            ->with(['customer', 'orders' => function ($query) {
+                $query->where('status', 'shipped');
+            }])
+            ->get()
+            ->map(function ($user) {
+                $user->total_spending = $user->orders->sum('total');
+                $user->birthday_date = $user->customer && $user->customer->tgl_lahir ? $user->customer->tgl_lahir->translatedFormat('d M') : '-';
+                $user->is_birthday_today = true; // Karena sudah difilter untuk hari ini
+                return $user;
+            });
+
+        return view('admin.crm.index', compact('loyalCustomers', 'birthdayCustomers', 'loyalWithBirthday', 'combinedCustomers'));
     }
 
     /**

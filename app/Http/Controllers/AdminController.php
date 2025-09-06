@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Product;
 use App\Models\Order;
 use App\Models\Customer;
+use App\Models\PersonalDiscount;
 
 class AdminController extends Controller
 {
@@ -219,7 +220,7 @@ class AdminController extends Controller
         $customers = User::where('role', 'customer')
             ->with('customer')
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate(5);
 
         return view('admin.customers.index', compact('customers'));
     }
@@ -411,6 +412,32 @@ class AdminController extends Controller
         }
     }
 
+    /**
+     * Delete customer
+     */
+    public function deleteCustomer(User $user)
+    {
+        try {
+            // Delete customer profile first
+            if ($user->customer) {
+                $user->customer()->delete();
+            }
+            
+            // Delete user
+            $user->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Customer berhasil dihapus.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menghapus customer.'
+            ], 500);
+        }
+    }
+
     // ============ ORDER MANAGEMENT ============
 
     /**
@@ -525,8 +552,8 @@ class AdminController extends Controller
     public function getCustomers(Request $request)
     {
         $customers = User::where('role', 'customer')
-            ->with('customer:user_id,alamat,no_hp')
-            ->select('id', 'name', 'email')
+            ->with('customer')
+            ->select('id', 'name', 'email', 'created_at')
             ->get();
 
         return response()->json([
@@ -646,5 +673,140 @@ class AdminController extends Controller
         ];
 
         return view('admin.reports.index', compact('monthlySales', 'topProducts', 'stats'));
+    }
+
+    // ============ CRM HISTORY ============
+
+    /**
+     * Show CRM history page with messages and discounts
+     */
+    public function crmHistory()
+    {
+        // Get all users with messages (not null)
+        $messageHistory = User::whereNotNull('message')
+            ->select('id', 'name', 'email', 'message', 'updated_at')
+            ->orderBy('updated_at', 'desc')
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'type' => 'message',
+                    'customer_name' => $user->name,
+                    'customer_email' => $user->email,
+                    'content' => $user->message,
+                    'created_at' => $user->updated_at->setTimezone('Asia/Jakarta')->translatedFormat('d M Y H:i') . ' WIB',
+                    'updated_at' => $user->updated_at
+                ];
+            });
+
+        // Get all personal discounts with product info
+        $discountHistory = PersonalDiscount::with(['user', 'product'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($discount) {
+                $productName = $discount->product ? $discount->product->nama : 'Unknown Product';
+                return [
+                    'id' => $discount->id,
+                    'type' => 'discount',
+                    'customer_name' => $discount->user->name ?? 'Unknown',
+                    'customer_email' => $discount->user->email ?? 'Unknown',
+                    'content' => "{$discount->persen_diskon}% untuk {$productName}",
+                    'created_at' => $discount->created_at->setTimezone('Asia/Jakarta')->translatedFormat('d M Y H:i') . ' WIB',
+                    'updated_at' => $discount->updated_at,
+                    'expires_at' => $discount->expires_at ? $discount->expires_at->setTimezone('Asia/Jakarta')->translatedFormat('d M Y H:i') . ' WIB' : 'Tidak ada',
+                    'is_active' => $discount->isValid(),
+                    'admin_note' => $discount->admin_note
+                ];
+            });
+
+        // Combine and sort all history items by date
+        $allHistory = $messageHistory->merge($discountHistory)
+            ->sortByDesc('updated_at')
+            ->values();
+
+        return view('admin.crm.history', compact('allHistory'));
+    }
+
+    /**
+     * Delete CRM history item
+     */
+    public function deleteCrmHistory(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer',
+            'type' => 'required|in:message,discount',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak valid.'
+            ], 422);
+        }
+
+        try {
+            if ($request->type === 'message') {
+                $user = User::findOrFail($request->id);
+                $user->update(['message' => null]);
+                $message = 'Pesan berhasil dihapus dari riwayat.';
+            } else {
+                $discount = PersonalDiscount::findOrFail($request->id);
+                $discount->delete();
+                $message = 'Diskon berhasil dihapus dari riwayat.';
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menghapus riwayat.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Update CRM history item (for messages)
+     */
+    public function updateCrmHistory(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer',
+            'type' => 'required|in:message',
+            'content' => 'required|string|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak valid.',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            if ($request->type === 'message') {
+                $user = User::findOrFail($request->id);
+                $user->update(['message' => $request->content]);
+                $message = 'Pesan berhasil diperbarui.';
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hanya pesan yang dapat diperbarui.'
+                ], 422);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memperbarui riwayat.'
+            ], 500);
+        }
     }
 }
