@@ -50,6 +50,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     // Reports
     Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
+    Route::get('/reports/export/docx', [AdminController::class, 'exportReportDocx'])->name('reports.export.docx');
     
     // CRM Management
     Route::get('/crm', [CrmController::class, 'index'])->name('crm.index');

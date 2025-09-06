@@ -12,9 +12,14 @@
                 </h1>
                 <p class="text-muted mb-0">Analisis data penjualan dan performa produk</p>
             </div>
-            <button class="btn btn-success" onclick="window.print()">
-                <i class="fas fa-print"></i> Cetak Laporan
-            </button>
+            <div>
+                <a href="{{ route('admin.reports.export.docx') }}" class="btn btn-success me-2">
+                    <i class="fas fa-file-word"></i> Ekspor DOCX
+                </a>
+                <button class="btn btn-primary" onclick="window.print()">
+                    <i class="fas fa-print"></i> Cetak Laporan
+                </button>
+            </div>
         </div>
     </div>
 
@@ -110,9 +115,9 @@
                             </thead>
                             <tbody>
                                 @php
-                                    $maxSale = collect($monthlySales)->max('total') ?: 1;
+                                    $maxSale = collect($finalMonthlySales)->max('total') ?: 1;
                                 @endphp
-                                @foreach($monthlySales as $sale)
+                                @foreach($finalMonthlySales as $sale)
                                     <tr>
                                         <td><strong>{{ $sale['month'] }}</strong></td>
                                         <td class="text-success">

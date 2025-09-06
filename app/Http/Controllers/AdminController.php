@@ -8,8 +8,10 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\User;
 use App\Models\Product;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Customer;
 use App\Models\PersonalDiscount;
+use Carbon\Carbon;
 
 class AdminController extends Controller
 {
@@ -664,19 +666,118 @@ class AdminController extends Controller
      */
     public function reports()
     {
-        // Monthly sales for last 12 months
+        // Optimized monthly sales for last 12 months using GROUP BY
+        $monthlySalesData = Order::selectRaw('SUM(total) as total, strftime("%Y", created_at) as year, strftime("%m", created_at) as month')
+            ->where('status', 'paid')
+            ->where('created_at', '>=', now()->subMonths(11)->startOfMonth())
+            ->groupBy('year', 'month')
+            ->orderBy('year', 'asc')
+            ->orderBy('month', 'asc')
+            ->get();
+
+        // Format monthly sales data to match the existing structure
         $monthlySales = [];
+        foreach ($monthlySalesData as $data) {
+            $date = Carbon::createFromDate($data->year, $data->month, 1);
+            $monthlySales[] = [
+                'month' => $date->translatedFormat('M Y'),
+                'total' => $data->total
+            ];
+        }
+
+        // Ensure we have data for all 12 months, filling gaps with 0
+        $finalMonthlySales = [];
         for ($i = 11; $i >= 0; $i--) {
             $date = now()->subMonths($i);
-            $total = Order::whereYear('created_at', $date->year)
-                         ->whereMonth('created_at', $date->month)
-                         ->where('status', 'paid')
-                         ->sum('total');
+            $formattedMonth = $date->translatedFormat('M Y');
             
+            // Check if we have data for this month
+            $found = false;
+            foreach ($monthlySales as $sale) {
+                if ($sale['month'] === $formattedMonth) {
+                    $finalMonthlySales[] = $sale;
+                    $found = true;
+                    break;
+                }
+            }
+            
+            // If not found, add with 0 total
+            if (!$found) {
+                $finalMonthlySales[] = [
+                    'month' => $formattedMonth,
+                    'total' => 0
+                ];
+            }
+        }
+
+        // Top selling products (already optimized with withSum)
+        $topProducts = Product::withSum('orderItems', 'jumlah_item')
+            ->orderBy('order_items_sum_jumlah_item', 'desc')
+            ->take(10)
+            ->get();
+
+        // Optimized statistics with single queries
+        $startDate = now()->startOfMonth();
+        $endDate = now()->endOfMonth();
+        
+        $stats = [
+            'total_sales_this_month' => Order::where('status', 'paid')
+                                           ->whereBetween('created_at', [$startDate, $endDate])
+                                           ->sum('total'),
+            'total_orders_this_month' => Order::whereBetween('created_at', [$startDate, $endDate])
+                                            ->count(),
+            'total_revenue' => Order::where('status', 'paid')->sum('total'),
+            'total_orders' => Order::count(),
+        ];
+
+        return view('admin.reports.index', compact('finalMonthlySales', 'topProducts', 'stats'));
+    }
+
+    /**
+     * Export reports to DOCX format
+     */
+    public function exportReportDocx()
+    {
+        // Get the same data used in the reports view
+        $monthlySalesData = Order::selectRaw('SUM(total) as total, strftime("%Y", created_at) as year, strftime("%m", created_at) as month')
+            ->where('status', 'paid')
+            ->where('created_at', '>=', now()->subMonths(11)->startOfMonth())
+            ->groupBy('year', 'month')
+            ->orderBy('year', 'asc')
+            ->orderBy('month', 'asc')
+            ->get();
+
+        // Format monthly sales data
+        $monthlySales = [];
+        foreach ($monthlySalesData as $data) {
+            $date = Carbon::createFromDate($data->year, $data->month, 1);
             $monthlySales[] = [
-                'month' => $date->format('M Y'),
-                'total' => $total
+                'month' => $date->translatedFormat('M Y'),
+                'total' => $data->total
             ];
+        }
+
+        // Ensure we have data for all 12 months
+        $finalMonthlySales = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $formattedMonth = $date->translatedFormat('M Y');
+            
+            $found = false;
+            foreach ($monthlySales as $sale) {
+                if ($sale['month'] === $formattedMonth) {
+                    $finalMonthlySales[] = $sale;
+                    $found = true;
+                    break;
+                }
+            }
+            
+            if (!$found) {
+                $finalMonthlySales[] = [
+                    'month' => $formattedMonth,
+                    'total' => 0
+                ];
+            }
         }
 
         // Top selling products
@@ -685,20 +786,136 @@ class AdminController extends Controller
             ->take(10)
             ->get();
 
-        // Recent sales statistics
+        // Statistics
+        $startDate = now()->startOfMonth();
+        $endDate = now()->endOfMonth();
+        
         $stats = [
-            'total_sales_this_month' => Order::whereYear('created_at', now()->year)
-                                           ->whereMonth('created_at', now()->month)
-                                           ->where('status', 'paid')
+            'total_sales_this_month' => Order::where('status', 'paid')
+                                           ->whereBetween('created_at', [$startDate, $endDate])
                                            ->sum('total'),
-            'total_orders_this_month' => Order::whereYear('created_at', now()->year)
-                                            ->whereMonth('created_at', now()->month)
+            'total_orders_this_month' => Order::whereBetween('created_at', [$startDate, $endDate])
                                             ->count(),
             'total_revenue' => Order::where('status', 'paid')->sum('total'),
             'total_orders' => Order::count(),
         ];
 
-        return view('admin.reports.index', compact('monthlySales', 'topProducts', 'stats'));
+        // Create new Word document
+        $phpWord = new \PhpOffice\PhpWord\PhpWord();
+        $phpWord->setDefaultFontName('Arial');
+        $phpWord->setDefaultFontSize(11);
+
+        // Add document properties
+        $properties = $phpWord->getDocInfo();
+        $properties->setTitle('Laporan Penjualan - UD. Barokah Jaya Beton');
+        $properties->setSubject('Laporan Penjualan');
+        $properties->setCreator('UD. Barokah Jaya Beton Admin System');
+        $properties->setCompany('UD. Barokah Jaya Beton');
+        $properties->setCreated(time());
+
+        // Add section
+        $section = $phpWord->addSection([
+            'marginTop' => 600,
+            'marginRight' => 600,
+            'marginBottom' => 600,
+            'marginLeft' => 600
+        ]);
+
+        // Add title
+        $section->addTitle('Laporan Penjualan - UD. Barokah Jaya Beton', 1);
+
+        // Add date
+        $section->addText('Tanggal Laporan: ' . now()->setTimezone('Asia/Jakarta')->translatedFormat('d F Y H:i') . ' WIB', [
+            'size' => 12,
+            'bold' => true
+        ]);
+        $section->addTextBreak(1);
+
+        // Add statistics table
+        $section->addTitle('Statistik Penjualan', 2);
+        
+        $table = $section->addTable([
+            'borderSize' => 6,
+            'borderColor' => '000000',
+            'cellMargin' => 80
+        ]);
+
+        $table->addRow();
+        $table->addCell(5000)->addText('Metrik', ['bold' => true]);
+        $table->addCell(3000)->addText('Nilai', ['bold' => true]);
+
+        $table->addRow();
+        $table->addCell(5000)->addText('Penjualan Bulan Ini');
+        $table->addCell(3000)->addText('Rp ' . number_format($stats['total_sales_this_month'], 0, ',', '.'));
+
+        $table->addRow();
+        $table->addCell(5000)->addText('Pesanan Bulan Ini');
+        $table->addCell(3000)->addText(number_format($stats['total_orders_this_month']));
+
+        $table->addRow();
+        $table->addCell(5000)->addText('Total Revenue');
+        $table->addCell(3000)->addText('Rp ' . number_format($stats['total_revenue'], 0, ',', '.'));
+
+        $table->addRow();
+        $table->addCell(5000)->addText('Total Pesanan');
+        $table->addCell(3000)->addText(number_format($stats['total_orders']));
+
+        $section->addTextBreak(1);
+
+        // Add monthly sales table
+        $section->addTitle('Penjualan 12 Bulan Terakhir', 2);
+        
+        $table = $section->addTable([
+            'borderSize' => 6,
+            'borderColor' => '000000',
+            'cellMargin' => 80
+        ]);
+
+        $table->addRow();
+        $table->addCell(5000)->addText('Bulan', ['bold' => true]);
+        $table->addCell(3000)->addText('Total Penjualan', ['bold' => true]);
+
+        foreach ($finalMonthlySales as $sale) {
+            $table->addRow();
+            $table->addCell(5000)->addText($sale['month']);
+            $table->addCell(3000)->addText('Rp ' . number_format($sale['total'], 0, ',', '.'));
+        }
+
+        $section->addTextBreak(1);
+
+        // Add top products table
+        $section->addTitle('Produk Terlaris', 2);
+        
+        $table = $section->addTable([
+            'borderSize' => 6,
+            'borderColor' => '000000',
+            'cellMargin' => 80
+        ]);
+
+        $table->addRow();
+        $table->addCell(1000)->addText('No', ['bold' => true]);
+        $table->addCell(5000)->addText('Nama Produk', ['bold' => true]);
+        $table->addCell(2000)->addText('Harga', ['bold' => true]);
+        $table->addCell(2000)->addText('Terjual', ['bold' => true]);
+        $table->addCell(2000)->addText('Revenue', ['bold' => true]);
+
+        foreach ($topProducts as $index => $product) {
+            $table->addRow();
+            $table->addCell(1000)->addText($index + 1);
+            $table->addCell(5000)->addText($product->nama);
+            $table->addCell(2000)->addText('Rp ' . number_format($product->harga, 0, ',', '.'));
+            $table->addCell(2000)->addText(number_format($product->order_items_sum_jumlah_item ?? 0));
+            $table->addCell(2000)->addText('Rp ' . number_format(($product->order_items_sum_jumlah_item ?? 0) * $product->harga, 0, ',', '.'));
+        }
+
+        // Save file
+        $filename = 'laporan-penjualan-' . now()->format('Y-m-d') . '.docx';
+        $tempFile = tempnam(sys_get_temp_dir(), 'phpword');
+        $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+        $writer->save($tempFile);
+
+        // Return download response
+        return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
     }
 
     // ============ CRM HISTORY ============
