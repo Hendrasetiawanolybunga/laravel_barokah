@@ -28,7 +28,7 @@
             </a>
         </div>
         <div class="card-body">
-            @if($allHistory->count() > 0)
+            @if($paginatedHistory->count() > 0)
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
@@ -42,7 +42,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($allHistory as $item)
+                            @foreach($paginatedHistory as $item)
                                 <tr>
                                     <td>{{ $item['created_at'] }}</td>
                                     <td>
@@ -109,6 +109,15 @@
                     <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                     <h5 class="text-muted">Belum ada riwayat CRM</h5>
                     <p class="text-muted">Riwayat pesan dan diskon akan muncul di sini setelah Anda mengirimkannya.</p>
+                </div>
+            @endif
+            
+            <!-- Pagination -->
+            @if($paginatedHistory->hasPages())
+                <div class="d-flex justify-content-center mt-4">
+                    <nav aria-label="Navigasi halaman riwayat CRM">
+                        {{ $paginatedHistory->links('vendor.pagination.bootstrap-5') }}
+                    </nav>
                 </div>
             @endif
         </div>

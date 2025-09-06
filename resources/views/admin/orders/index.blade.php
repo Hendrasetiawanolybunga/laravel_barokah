@@ -203,7 +203,9 @@
                         
                         <!-- Pagination -->
                         <div class="d-flex justify-content-center mt-4">
-                            {{ $orders->links() }}
+                            <nav aria-label="Navigasi halaman pesanan">
+                                {{ $orders->links('vendor.pagination.bootstrap-5') }}
+                            </nav>
                         </div>
                     @else
                         <div class="text-center py-5">

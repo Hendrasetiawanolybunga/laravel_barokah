@@ -40,7 +40,7 @@ class AdminController extends Controller
      */
     public function products()
     {
-        $products = Product::orderBy('created_at', 'desc')->paginate(10);
+        $products = Product::orderBy('created_at', 'desc')->paginate(5);
         return view('admin.products.index', compact('products'));
     }
 
@@ -569,7 +569,7 @@ class AdminController extends Controller
     {
         $orders = Order::with(['user', 'orderItems.product'])
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate(5);
 
         return view('admin.orders.index', compact('orders'));
     }
@@ -680,13 +680,20 @@ class AdminController extends Controller
     /**
      * Show CRM history page with messages and discounts
      */
-    public function crmHistory()
+    public function crmHistory(Request $request)
     {
-        // Get all users with messages (not null)
-        $messageHistory = User::whereNotNull('message')
+        // Get users with messages (not null) - paginated
+        $messageQuery = User::whereNotNull('message')
             ->select('id', 'name', 'email', 'message', 'updated_at')
-            ->orderBy('updated_at', 'desc')
-            ->get()
+            ->orderBy('updated_at', 'desc');
+
+        // Get personal discounts with product info - paginated
+        $discountQuery = PersonalDiscount::with(['user', 'product'])
+            ->orderBy('created_at', 'desc');
+
+        // Since we're combining two different collections, we'll get all records
+        // and then manually paginate the combined result
+        $messageHistory = $messageQuery->get()
             ->map(function ($user) {
                 return [
                     'id' => $user->id,
@@ -699,10 +706,7 @@ class AdminController extends Controller
                 ];
             });
 
-        // Get all personal discounts with product info
-        $discountHistory = PersonalDiscount::with(['user', 'product'])
-            ->orderBy('created_at', 'desc')
-            ->get()
+        $discountHistory = $discountQuery->get()
             ->map(function ($discount) {
                 $productName = $discount->product ? $discount->product->nama : 'Unknown Product';
                 return [
@@ -724,7 +728,22 @@ class AdminController extends Controller
             ->sortByDesc('updated_at')
             ->values();
 
-        return view('admin.crm.history', compact('allHistory'));
+        // Manual pagination
+        $perPage = 5;
+        $currentPage = $request->get('page', 1);
+        $currentPageItems = $allHistory->slice(($currentPage - 1) * $perPage, $perPage)->values();
+        $paginatedHistory = new \Illuminate\Pagination\LengthAwarePaginator(
+            $currentPageItems,
+            $allHistory->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => $request->url(),
+                'pageName' => 'page',
+            ]
+        );
+
+        return view('admin.crm.history', compact('paginatedHistory'));
     }
 
     /**

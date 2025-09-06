@@ -45,11 +45,21 @@ class CustomerSeeder extends Seeder
             'Jl. Asia Afrika No. 505, Bandar Lampung',
             'Jl. Imam Bonjol No. 606, Palembang',
             'Jl. Cendana No. 707, Balikpapan',
-            'Jl. Kenanga No. 808, Manado'
+            'Jl. Kenanga No. 808, Manado',
+            'Jl. Mangga No. 111, Malang',
+            'Jl. Jeruk No. 222, Solo',
+            'Jl. Anggrek No. 333, Batam',
+            'Jl. Melati No. 444, Pontianak',
+            'Jl. Mawar No. 555, Padang',
+            'Jl. Dahlia No. 666, Samarinda',
+            'Jl. Teratai No. 777, Banjarmasin',
+            'Jl. Kamboja No. 888, Pekanbaru',
+            'Jl. Bougenville No. 999, Jambi',
+            'Jl. Sakura No. 1010, Mataram'
         ];
 
-        // Create 12 customers
-        for ($i = 1; $i <= 12; $i++) {
+        // Create 22 customers (12 existing + 10 new)
+        for ($i = 1; $i <= 22; $i++) {
             // Create a user with customer role
             $user = User::create([
                 'name' => fake()->name(),
@@ -70,5 +80,7 @@ class CustomerSeeder extends Seeder
                 'no_hp' => '08' . fake()->numberBetween(1000000000, 9999999999), // Indonesian phone number format
             ]);
         }
+        
+        echo "Created 22 customers.\n";
     }
 }
