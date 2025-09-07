@@ -146,7 +146,7 @@
     <!-- Pelanggan VIP -->
     <div class="card mb-4">
         <div class="card-header bg-info text-white">
-            <h5 class="mb-0"><i class="fas fa-star"></i> Pelanggan VIP (Loyal & Ulang Tahun)</h5>
+            <h5 class="mb-0"><i class="fas fa-star"></i> Pelanggan VIP (Loyal & Ulang Tahun hari ini)</h5>
         </div>
         <div class="card-body">
             @if($combinedCustomers->count() > 0)
@@ -175,11 +175,11 @@
                                         <span class="badge bg-warning text-dark">Birthday</span>
                                     </td>
                                     <td>
-                                        <button class="btn btn-primary btn-sm send-message-btn"
+                                        {{-- <button class="btn btn-primary btn-sm send-message-btn"
                                                 data-customer-id="{{ $customer->id }}"
                                                 data-customer-name="{{ $customer->name }}">
                                             <i class="fas fa-envelope"></i> Pesan
-                                        </button>
+                                        </button> --}}
                                         <button class="btn btn-success btn-sm set-discount-btn"
                                                 data-customer-id="{{ $customer->id }}"
                                                 data-customer-name="{{ $customer->name }}">

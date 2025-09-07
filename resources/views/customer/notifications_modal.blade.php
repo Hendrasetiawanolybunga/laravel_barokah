@@ -23,9 +23,9 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="fas fa-times"></i> Tutup
                 </button>
-                <button type="button" class="btn btn-primary" id="mark-all-read-btn">
+                {{-- <button type="button" class="btn btn-primary" id="mark-all-read-btn">
                     <i class="fas fa-check-double"></i> Tandai Semua Dibaca
-                </button>
+                </button> --}}
             </div>
         </div>
     </div>

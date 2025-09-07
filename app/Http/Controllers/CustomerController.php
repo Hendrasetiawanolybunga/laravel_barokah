@@ -868,4 +868,31 @@ class CustomerController extends Controller
         
         return $count;
     }
+    
+    /**
+     * Get active discounts for modal display
+     */
+    public function getActiveDiscountsForModal()
+    {
+        $discounts = auth()->user()->personalDiscounts()
+            ->with('product:id,nama,deskripsi')
+            ->where('is_active', true)
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                      ->orWhere('expires_at', '>', now()->setTimezone('Asia/Jakarta'));
+            })
+            ->get()
+            ->map(function ($discount) {
+                return [
+                    'id' => $discount->id,
+                    'product_name' => $discount->product->nama,
+                    'product_description' => $discount->product->deskripsi,
+                    'percentage' => $discount->persen_diskon,
+                    'expires_at' => $discount->expires_at ? $discount->expires_at->toISOString() : null,
+                    'formatted_expiry' => $discount->formattedExpiryShort,
+                ];
+            });
+
+        return response()->json($discounts);
+    }
 }

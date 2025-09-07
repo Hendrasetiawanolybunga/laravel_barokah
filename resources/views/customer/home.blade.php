@@ -395,4 +395,203 @@
         }, 3000);
     }
 </script>
+
+<!-- Active Discounts Modal -->
+<div class="modal fade" id="activeDiscountsModal" tabindex="-1" aria-labelledby="activeDiscountsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="activeDiscountsModalLabel">
+                    <i class="fas fa-percent"></i> Diskon Aktif Anda
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="discounts-content">
+                    <!-- Discounts will be loaded here via AJAX -->
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Memuat...</span>
+                        </div>
+                        <p class="mt-2">Memuat diskon aktif...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Discounts Modal JavaScript -->
+<script>
+    // Add click event to the active discounts card
+    document.addEventListener('DOMContentLoaded', function() {
+        const discountsCard = document.querySelector('.card.text-center.border-warning');
+        if (discountsCard) {
+            discountsCard.style.cursor = 'pointer';
+            discountsCard.addEventListener('click', function() {
+                loadActiveDiscounts();
+            });
+        }
+    });
+    
+    // Function to load active discounts via AJAX
+    function loadActiveDiscounts() {
+        const modal = new bootstrap.Modal(document.getElementById('activeDiscountsModal'));
+        const discountsContent = document.getElementById('discounts-content');
+        
+        // Show loading state
+        discountsContent.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Memuat...</span>
+                </div>
+                <p class="mt-2">Memuat diskon aktif...</p>
+            </div>
+        `;
+        
+        // Show the modal
+        modal.show();
+        
+        // Fetch discounts data
+        fetch('{{ route("customer.active-discounts") }}', {
+            method: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayDiscounts(data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            discountsContent.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Terjadi kesalahan saat memuat diskon
+                </div>
+            `;
+        });
+    }
+    
+    // Function to display discounts in the modal
+    function displayDiscounts(discounts) {
+        const discountsContent = document.getElementById('discounts-content');
+        
+        if (discounts.length === 0) {
+            discountsContent.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-percent fa-3x text-muted mb-3"></i>
+                    <h5>Tidak ada diskon aktif</h5>
+                    <p class="text-muted">Anda tidak memiliki diskon aktif saat ini.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let discountsHtml = `
+            <div class="row g-4">
+        `;
+        
+        discounts.forEach(discount => {
+            // Create countdown timer if discount has expiry date
+            let countdownHtml = '';
+            if (discount.expires_at) {
+                countdownHtml = `
+                    <div class="mt-2">
+                        <small class="text-muted">Berlaku hingga: ${discount.formatted_expiry}</small>
+                        <div class="countdown-timer mt-1" id="countdown-${discount.id}">
+                            <!-- Countdown will be populated by JavaScript -->
+                        </div>
+                    </div>
+                `;
+            }
+            
+            discountsHtml += `
+                <div class="col-12">
+                    <div class="card border-primary h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h5 class="card-title text-primary">${discount.product_name}</h5>
+                                    <p class="card-text text-muted">${discount.product_description}</p>
+                                    <div class="badge bg-success fs-6">Diskon ${discount.percentage}%</div>
+                                </div>
+                                ${countdownHtml}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        discountsHtml += `
+            </div>
+        `;
+        
+        discountsContent.innerHTML = discountsHtml;
+        
+        // Initialize countdown timers for each discount
+        discounts.forEach(discount => {
+            if (discount.expires_at) {
+                initializeCountdown(discount.id, discount.expires_at);
+            }
+        });
+    }
+    
+    // Function to initialize countdown timer
+    function initializeCountdown(discountId, expiryDate) {
+        const expiryTime = new Date(expiryDate).getTime();
+        const countdownElement = document.getElementById(`countdown-${discountId}`);
+        
+        // Update the countdown every second
+        const countdownInterval = setInterval(function() {
+            const now = new Date().getTime();
+            const distance = expiryTime - now;
+            
+            // If the countdown is finished
+            if (distance < 0) {
+                clearInterval(countdownInterval);
+                countdownElement.innerHTML = `
+                    <span class="badge bg-danger">Diskon Kadaluarsa</span>
+                `;
+                return;
+            }
+            
+            // Calculate days, hours, minutes and seconds
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            // Display the results
+            countdownElement.innerHTML = `
+                <div class="d-flex small">
+                    <div class="text-center mx-1">
+                        <div class="fw-bold">${days}</div>
+                        <div>Hari</div>
+                    </div>
+                    <div class="text-center mx-1">
+                        <div class="fw-bold">${hours}</div>
+                        <div>Jam</div>
+                    </div>
+                    <div class="text-center mx-1">
+                        <div class="fw-bold">${minutes}</div>
+                        <div>Menit</div>
+                    </div>
+                    <div class="text-center mx-1">
+                        <div class="fw-bold">${seconds}</div>
+                        <div>Detik</div>
+                    </div>
+                </div>
+            `;
+        }, 1000);
+    }
+</script>
 @endpush

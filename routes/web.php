@@ -124,4 +124,7 @@ Route::middleware(['auth', 'customer'])->prefix('customer')->name('customer.')->
     Route::get('/orders', [CustomerController::class, 'orders'])->name('orders');
     Route::get('/orders/{order}', [CustomerController::class, 'showOrder'])->name('orders.show');
     Route::post('/orders/{orderItem}/review', [CustomerController::class, 'submitReview'])->name('orders.review');
+    
+    // Active Discounts Modal
+    Route::get('/active-discounts', [CustomerController::class, 'getActiveDiscountsForModal'])->name('active-discounts');
 });
